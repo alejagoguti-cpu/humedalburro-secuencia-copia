@@ -24,8 +24,10 @@ svg#edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 .disc{position:absolute;left:0;top:0;width:calc(var(--r)*2px);height:calc(var(--r)*2px);margin:calc(var(--r)*-1px) 0 0 calc(var(--r)*-1px);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0 6%;text-align:center;cursor:pointer;
  background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.14),rgba(255,255,255,.02)),#000;border:2px solid var(--c);box-shadow:0 0 14px -4px var(--c);color:var(--c);
  transition:opacity .45s,transform .45s cubic-bezier(.2,.9,.3,1.2),box-shadow .25s,background .25s}
-.disc>i{font-size:calc(var(--r)*.3px);line-height:1;opacity:.9}
-.tx{color:var(--txt);font-weight:600;font-size:clamp(9.5px,calc(var(--r)*.19px + 3px),14px);line-height:1.12;max-width:calc(var(--r)*1.62px);overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow-wrap:anywhere;hyphens:auto;pointer-events:none}
+.disc>i{font-size:calc(var(--f,11)*.95px);line-height:1;opacity:.9;margin-bottom:1px}
+.nd.hubn .disc{animation:glow 2.8s ease-in-out infinite}@keyframes glow{50%{box-shadow:0 0 30px 2px var(--c)}}
+body.boot .disc{animation:pop .7s cubic-bezier(.2,.9,.3,1.25) both;animation-delay:calc(var(--i)*38ms)}@keyframes pop{from{opacity:0;transform:scale(.1)}to{opacity:1;transform:scale(1)}}
+.tx{color:var(--txt);font-weight:600;font-size:calc(var(--f,11)*1px);line-height:1.17;white-space:nowrap;text-align:center;pointer-events:none}
 .nd.sel .tx{color:#04122e}
 .disc:hover{box-shadow:0 0 26px 0 var(--c)}
 .nd.off .disc{opacity:0;transform:scale(.2);pointer-events:none}
@@ -171,12 +173,18 @@ svg#edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 const {capas,tipos,nodes,edges}=DATA, N=nodes.length;
 const $=s=>document.querySelector(s), world=$('#world'), svg=$('#edges'), view=$('#view'), drawer=$('#drawer');
 const NS='http://www.w3.org/2000/svg';
-const abbr=s=>{const x=s.replace(/s*(.*?)/g,'').replace(/^Flora Nativa Hub: /,'Flora: ').replace(/(de|del|la|las|los|el|y|e|en|con)s+/gi,'').trim();return x.length>34?x.slice(0,33).replace(/s+S*$/,'')+'…':x};
-const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+// Nombre completo para el nodo: sin el paréntesis largo (queda solo si es una sigla corta, p. ej. (SDP))
+function labelOf(n){let out='',depth=0,buf='',longP='';for(const ch of n.name){if(ch==='('){depth++;buf='';continue}if(ch===')'&&depth>0){depth--;if(depth===0){if(buf.length<=7&&buf.indexOf('/')<0)out+=' ('+buf+')';else if(!longP)longP=buf}continue}if(depth>0)buf+=ch;else out+=ch}
+ out=out.split(' ').filter(Boolean).join(' ');if(out.startsWith('Flora Nativa Hub: '))out='Flora: '+out.slice(18);
+ if(out.length<=7&&longP)out=out+' · '+longP;return out}
+function wrapLines(s){const w=s.split(' ');const target=s.length<=14?1:Math.ceil(s.length/13);let W=Math.max(...w.map(x=>x.length));
+ for(;;W++){const L=[];let cur='';w.forEach(x=>{if(!cur)cur=x;else if((cur+' '+x).length<=W)cur+=' '+x;else{L.push(cur);cur=x}});L.push(cur);if(L.length<=target||W>60)return L}}
+const norm=s=>s.normalize('NFD').split('').filter(c=>{const k=c.charCodeAt(0);return k<768||k>879}).join('').toLowerCase();
 const wrap=s=>{if(s.length<=20)return[s];const w=s.split(' ');let best=0,bd=1e9;for(let i=1;i<w.length;i++){const a=w.slice(0,i).join(' ').length,b=w.slice(i).join(' ').length,d=Math.abs(a-b);if(d<bd){bd=d;best=i}}return best?[w.slice(0,best).join(' '),w.slice(best).join(' ')]:[s]};
 const adj=nodes.map(()=>[]);edges.forEach((e,k)=>{adj[e.s].push(k);adj[e.t].push(k)});
 const other=(k,i)=>edges[k].s===i?edges[k].t:edges[k].s;
 const shortCap=c=>c.badge.charAt(0)+c.badge.slice(1).toLowerCase(), shortTip=t=>t.name.split(' ')[0];
+const TX=nodes.map(n=>{const lines=wrapLines(labelOf(n));const mc=Math.max(...lines.map(l=>l.length));const wE=mc*.56,hE=lines.length*1.17+1.1;return{lines,rEm:Math.sqrt((wE/2)**2+(hE/2)**2)}});
 // ---- estado
 const off=new Set(), hiddenCat=new Set(), hiddenT=new Set();
 const opts={size:true,thick:true,flow:true,rings:true};
@@ -192,12 +200,12 @@ function recount(){orph.clear();deg.fill(0);let cnt=0;for(let i=0;i<N;i++)if(bas
  if(cnt>1)for(let i=0;i<N;i++)if(baseOn(i)&&deg[i]===0)orph.add(i)}
 function connect(i){const live=adj[i].some(k=>baseOn(other(k,i))&&!hiddenT.has(edges[k].type));if(!live)adj[i].forEach(k=>{const o=other(k,i);if(!hiddenCat.has(nodes[o].cat)&&!hiddenT.has(edges[k].type))off.delete(o)})}
 function reconnect(i){off.delete(i);adj[i].forEach(k=>{const o=other(k,i);off.delete(o);hiddenCat.delete(nodes[o].cat);hiddenT.delete(edges[k].type)})}
-const radius=i=>isOn(i)?(opts.size?Math.min(78,36+7*Math.sqrt(deg[i])):44):14;
+const radius=i=>isOn(i)?Math.max(opts.size?Math.min(80,36+7*Math.sqrt(deg[i])):44,11*TX[i].rEm+7):14;
 // ---- nodos
 const P=nodes.map((n,i)=>{const q=DATA.pos&&DATA.pos[i];return q?{x:q.x*.8,y:q.y*.8,vx:0,vy:0,r:20,tr:20}:{x:Math.cos(i*2.4)*300,y:Math.sin(i*2.4)*300,vx:0,vy:0,r:20,tr:20}});
 {let cx=0,cy=0;P.forEach(p=>{cx+=p.x;cy+=p.y});cx/=N;cy/=N;P.forEach(p=>{p.x-=cx;p.y-=cy})}
-const els=nodes.map((n,i)=>{const d=document.createElement('div');d.className='nd';d.style.setProperty('--c',capas[n.cat].color);
- d.innerHTML=`<div class="disc"><div class="hubring"></div><i class="fa-solid ${n.icon}"></i><span class="tx">${abbr(n.name)}</span><span class="deg"></span></div>`;
+const els=nodes.map((n,i)=>{const d=document.createElement('div');d.className='nd';d.style.setProperty('--i',i);d.style.setProperty('--c',capas[n.cat].color);
+ d.innerHTML=`<div class="disc"><div class="hubring"></div><i class="fa-solid ${n.icon}"></i><span class="tx">${TX[i].lines.join('<br>')}</span><span class="deg"></span></div>`;
  world.appendChild(d);return d});
 const discs=els.map(d=>d.querySelector('.disc')), degEls=els.map(d=>d.querySelector('.deg'));
 // ---- aristas
@@ -207,7 +215,7 @@ const mk=(tag,at)=>{const e=document.createElementNS(NS,tag);for(const k in at)e
 const E=edges.map((e,k)=>{const col=tipos[e.type].color;
  const hit=mk('line',{class:'hit'});hit.addEventListener('click',ev=>{ev.stopPropagation();pickEdge(k)});hit.addEventListener('mouseenter',()=>{hoverEdge=k});hit.addEventListener('mouseleave',()=>{if(hoverEdge===k)hoverEdge=-1});
  const ln=mk('line',{class:'ln','stroke':col,'stroke-width':1.7,'marker-end':'url(#ar'+e.type+')'});
- const ps=[0,1].map(()=>mk('circle',{r:3,fill:col,opacity:0}));
+ const ps=[0,1].map(()=>mk('circle',{r:(2.3+.55*e.w).toFixed(1),fill:col,opacity:0}));
  svg.appendChild(hit);svg.appendChild(ln);ps.forEach(p=>svg.appendChild(p));
  const chip=document.createElement('div');chip.className='chip';chip.textContent=tipos[e.type].name;chip.style.color=col;world.appendChild(chip);
  return{hit,ln,ps,chip,g:0,ph:Math.random()}});
@@ -216,12 +224,14 @@ const gyk=()=>{const asp=(innerWidth-(drawer.classList.contains('on')?400:60))/M
 function step(){
  const act=[];for(let i=0;i<N;i++)if(isOn(i))act.push(i);
  for(let i=0;i<N;i++){P[i].tr=radius(i);P[i].r+=(P[i].tr-P[i].r)*.12}
+ if(sel>=0&&alpha<.05)alpha=.05;
+ const selNb=sel>=0?new Set(adj[sel].filter(edgeOn).map(k=>other(k,sel))):new Set();
  if(alpha>.003){
   const a=alpha;
   for(let x=0;x<act.length;x++)for(let y=x+1;y<act.length;y++){const i=act[x],j=act[y],pi=P[i],pj=P[j];let dx=pj.x-pi.x,dy=pj.y-pi.y,d2=dx*dx+dy*dy;if(d2<1){dx=Math.random()-.5;dy=Math.random()-.5;d2=1}const d=Math.sqrt(d2);
-   const dd=Math.max(d,70),rep=(70000+(pi.r+pj.r)*1200)*a/(dd*dd*d);pi.vx-=dx*rep;pi.vy-=dy*rep;pj.vx+=dx*rep;pj.vy+=dy*rep;
+   const dd=Math.max(d,70);let rep=(70000+(pi.r+pj.r)*1200)*a/(dd*dd*d);if(sel>=0&&(i===sel||j===sel)){const o=i===sel?j:i;if(!selNb.has(o))rep*=1.8}pi.vx-=dx*rep;pi.vy-=dy*rep;pj.vx+=dx*rep;pj.vy+=dy*rep;
    const mn=pi.r+pj.r+46;if(d<mn){const f=(mn-d)/d*.5*Math.min(1,a*3+.3);pi.vx-=dx*f;pi.vy-=dy*f;pj.vx+=dx*f;pj.vy+=dy*f}}
-  edges.forEach((e,k)=>{if(!edgeOn(k))return;const pi=P[e.s],pj=P[e.t];const dx=pj.x-pi.x,dy=pj.y-pi.y,d=Math.hypot(dx,dy)||1,L=70+pi.r+pj.r,f=(d-L)/d*.12*a;pi.vx+=dx*f;pi.vy+=dy*f;pj.vx-=dx*f;pj.vy-=dy*f});
+  edges.forEach((e,k)=>{if(!edgeOn(k))return;const pi=P[e.s],pj=P[e.t];const dx=pj.x-pi.x,dy=pj.y-pi.y,d=Math.hypot(dx,dy)||1,hot=sel>=0&&(e.s===sel||e.t===sel),L=(70+pi.r+pj.r)*(hot?.8:1),f=(d-L)/d*(hot?.22:.12)*a;pi.vx+=dx*f;pi.vy+=dy*f;pj.vx-=dx*f;pj.vy-=dy*f});
   let cx=0,cy=0;act.forEach(i=>{cx+=P[i].x;cy+=P[i].y});if(act.length){cx/=act.length;cy/=act.length}
   act.forEach(i=>{const p=P[i];if(p.fx!=null){p.x=p.fx;p.y=p.fy;p.vx=p.vy=0;return}p.vx=Math.max(-24,Math.min(24,(p.vx-p.x*.01*a/gyk())*.62));p.vy=Math.max(-24,Math.min(24,(p.vy-p.y*.01*gyk()*a)*.62));p.x+=p.vx-cx*.05;p.y+=p.vy-cy*.05});
   alpha*=.985;
@@ -243,18 +253,18 @@ function untangle(act){
 }
 function reheat(a){alpha=Math.max(alpha,a);untangled=false}
 // ---- dibujo
-const T0=performance.now();
+const T0=performance.now();const D=P.map(()=>({x:0,y:0}));
 const focus=()=>hover>=0?hover:sel;
 function draw(now){
  step();
  const t=(now-T0)/1000,f=focus();
- for(let i=0;i<N;i++){const p=P[i];els[i].style.transform=`translate(${p.x}px,${p.y}px)`;els[i].style.setProperty('--r',p.r.toFixed(1))}
+ for(let i=0;i<N;i++){const p=P[i],d=D[i];d.x=p.x+Math.sin(t*.7+i*1.7)*3.4;d.y=p.y+Math.cos(t*.58+i*2.3)*3.4;els[i].style.transform=`translate(${d.x}px,${d.y}px)`;els[i].style.setProperty('--r',p.r.toFixed(1));els[i].style.setProperty('--f',Math.max(11,Math.min(16,(p.r-7)/TX[i].rEm)).toFixed(2))}
  edges.forEach((e,k)=>{const o=E[k],on=edgeOn(k);o.g+=((on?1:0)-o.g)*.09;if(Math.abs((on?1:0)-o.g)<.01)o.g=on?1:0;
-  const a=P[e.s],b=P[e.t],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d,x1=a.x+ux*(a.r+3),y1=a.y+uy*(a.r+3),x2=b.x-ux*(b.r+5),y2=b.y-uy*(b.r+5),ex=x1+(x2-x1)*o.g,ey=y1+(y2-y1)*o.g;
+  const a=D[e.s],b=D[e.t],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d,x1=a.x+ux*(a.r+3),y1=a.y+uy*(a.r+3),x2=b.x-ux*(b.r+5),y2=b.y-uy*(b.r+5),ex=x1+(x2-x1)*o.g,ey=y1+(y2-y1)*o.g;
   const touch=(f>=0&&(e.s===f||e.t===f))||k===selEdge,dim=(f>=0&&!touch&&k!==selEdge)||(hlType>=0&&e.type!==hlType)||(hlCat>=0&&nodes[e.s].cat!==hlCat&&nodes[e.t].cat!==hlCat);
   for(const l of [o.ln,o.hit]){l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',ex);l.setAttribute('y2',ey)}
   o.ln.style.opacity=o.g*(dim?.14:touch?1:.62);o.ln.setAttribute('stroke-width',(opts.thick?1+.9*e.w:1.7)+(touch?1:0));o.hit.classList.toggle('on',on);
-  o.ps.forEach((c,q)=>{const u=((t*70/d+o.ph+q/2)%1);c.setAttribute('cx',x1+(x2-x1)*u);c.setAttribute('cy',y1+(y2-y1)*u);c.setAttribute('opacity',o.g>.95&&opts.flow?(dim?.08:.9):0)});
+  o.ps.forEach((c,q)=>{const u=((t*(48+26*e.w)/d+o.ph+q/2)%1);c.setAttribute('cx',x1+(x2-x1)*u);c.setAttribute('cy',y1+(y2-y1)*u);c.setAttribute('opacity',o.g>.95&&opts.flow?(dim?.08:.9):0)});
   const showChip=on&&(k===selEdge||k===hoverEdge);o.chip.classList.toggle('on',showChip);if(showChip)o.chip.style.transform=`translate(${(x1+x2)/2}px,${(y1+y2)/2}px) translate(-50%,-50%)`});
  if(autofit)fitStep();
  world.style.transform=`translate(${cam.x}px,${cam.y}px) scale(${cam.s})`;
@@ -378,10 +388,11 @@ addEventListener('resize',()=>{window.__dockH=$('#dock').offsetHeight;document.d
 recount();snapshot();ui();
 for(let i=0;i<N;i++){P[i].r=P[i].tr=radius(i)}
 window.__dockH=$('#dock').offsetHeight;document.documentElement.style.setProperty('--dockh',window.__dockH+'px');
-alpha=1;for(let k=0;k<320;k++)step();alpha=.25;untangled=false;
-fitStep(true);decorate();
+{const ord=[...Array(N).keys()].sort((a,b)=>nodes[a].cat-nodes[b].cat||a-b);ord.forEach((i,k)=>{const an=k/N*6.283;P[i].x=Math.cos(an)*420;P[i].y=Math.sin(an)*420/gyk()});}
+alpha=1;for(let k=0;k<30;k++)step();untangled=false;
+fitStep(true);decorate();document.body.classList.add('boot');setTimeout(()=>document.body.classList.remove('boot'),2800);
 requestAnimationFrame(draw);
-window.__net={P,edges,isOn,deg,off,toggleNode,step,fitStep,pick,setAlpha:a=>{alpha=a},get alpha(){return alpha}};
+window.__net={P,TX,draw,edges,isOn,deg,off,toggleNode,step,fitStep,pick,setAlpha:a=>{alpha=a},get alpha(){return alpha}};
 })();
 </script>
 </body>
