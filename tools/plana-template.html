@@ -412,6 +412,7 @@ $('#bAll').onclick=()=>{useAnchor=true;off.clear();hiddenCat.clear();hiddenT.cle
 $('#bFit').onclick=()=>{autofit=true};
 addEventListener('message',ev=>{const d=ev.data;if(!d)return;if(d.type==='territorio-listo')$('#terr').classList.add('ready');if(d.type==='territorio-progreso'){const p=Math.round(d.p*100);$('#terrBar').style.width=Math.max(4,p)+'%';$('#terrMsg').textContent='Cargando la base 3D de Kennedy… '+p+'%'}});
 $('#bMat').onclick=()=>{$('#terr').classList.remove('ready');$('#terrBar').style.width='3%';$('#terrMsg').textContent='Cargando la base 3D de Kennedy…';const ids=nodes.map((n,i)=>i).filter(isOn).map(i=>nodes[i].id);$('#terrFrame').src=(DATA.terr||'red-actores.html')+'?ids='+encodeURIComponent(ids.join(','));$('#terr').classList.add('on')};
+if(!DATA.terr)$('#bMat').style.display='none';
 $('#terrClose').onclick=()=>{$('#terr').classList.remove('on','ready');$('#terrFrame').removeAttribute('src')};
 addEventListener('resize',()=>{window.__dockH=$('#dock').offsetHeight;document.documentElement.style.setProperty('--dockh',window.__dockH+'px')});
 // ---- arranque: red completa, sin nodo central

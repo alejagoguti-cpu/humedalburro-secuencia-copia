@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>El POT en Kennedy · Mapa causal</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{--bg:#000;--line:#252525;--line2:#383838;--fg:#f0f0f0;--mut:#8e8e8e;--dim:#5d5d5d;
+ --sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--fg);font-family:var(--sans)}
+button{font-family:inherit;color:inherit;cursor:pointer}
+#app{max-width:760px;margin:0 auto;height:100%;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:12px;padding:14px 16px 10px}
+.logo{width:42px;height:42px;border-radius:10px;background:#f0ece2;color:#000;display:grid;place-items:center;font-size:19px;flex:none}
+.ttl{flex:1;min-width:0}.ttl h1{font-size:17px;font-weight:700;line-height:1.2}
+.ttl small{font:500 10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.ib{width:42px;height:42px;border-radius:10px;border:1px solid var(--line2);background:#0a0a0a;display:grid;place-items:center;font-size:15px;flex:none}
+.ib:hover{background:#171717}
+#chips{display:flex;gap:8px;padding:2px 16px 12px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:none}
+#chips::-webkit-scrollbar{display:none}
+.chip{flex:none;display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 13px 0 8px;border-radius:99px;border:1px solid color-mix(in srgb,var(--c) 45%,#000);background:color-mix(in srgb,var(--c) 14%,#000);font-size:12px;font-weight:600;white-space:nowrap}
+.chip i{width:20px;height:20px;border-radius:50%;background:var(--c);color:#000;display:grid;place-items:center;font-size:10px}
+#search{display:none;padding:10px 16px 0}#search.on{display:block}
+#search input{width:100%;height:40px;border-radius:10px;border:1px solid var(--line2);background:#0a0a0a;color:var(--fg);padding:0 14px;font:inherit;font-size:14px;outline:none}
+#scroll{flex:1;overflow-y:auto;padding:14px 16px 18px}
+.hint{border:1px dashed var(--line2);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.45;color:var(--mut);margin-bottom:14px;display:flex;gap:10px}
+.hint i{color:var(--fg);font-size:17px;margin-top:1px}
+.card{--c:#ece5d8;position:relative;border-radius:16px;background:var(--c);color:#14110d;margin-bottom:8px}
+.card.top{margin-bottom:10px}
+.head{display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px;min-height:64px;cursor:pointer}
+.card.lv0 .head{min-height:84px;padding:14px 16px}
+.card.top:not(.lv0) .head{min-height:90px}
+.ico{width:56px;height:56px;border-radius:14px;background:rgba(255,255,255,.22);border:1px solid rgba(0,0,0,.2);display:grid;place-items:center;font-size:23px;flex:none}
+.card.lv0 .ico{width:66px;height:66px;background:transparent;border:2px solid #000;font-size:27px}
+.tx{flex:1;min-width:0}
+.tx .k{font:500 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;opacity:.62}
+.tx .t{font-size:15px;font-weight:700;line-height:1.25;margin-top:2px}
+.card.lv0 .tx .t{font-size:20px}
+.tx .a{font:500 11px var(--mono);opacity:.65;margin-top:3px}
+.badge{min-width:46px;height:28px;border-radius:99px;background:#000;color:#fff;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 10px;flex:none}
+.badge i{font-size:9px;transition:transform .2s}
+.card.open>.head .badge i{transform:rotate(90deg)}
+.inf{width:38px;height:38px;border-radius:50%;border:1px solid rgba(0,0,0,.28);background:rgba(0,0,0,.14);display:grid;place-items:center;font-size:14px;flex:none}
+.inf.on{background:#000;color:#fff}
+.info{display:none;margin:0 14px 12px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.14);font-size:13px;line-height:1.5}
+.info.on{display:block}
+.links{display:flex;flex-wrap:wrap;gap:6px;margin:0 14px 12px}
+.lk{font:500 11px var(--mono);border:1px solid rgba(0,0,0,.3);background:rgba(0,0,0,.1);border-radius:99px;padding:5px 10px}
+.lk:hover{background:#000;color:#fff}
+.kids{display:none;padding:0 8px 8px 22px;position:relative}
+.card.open>.kids{display:block}
+.kids::before{content:"";position:absolute;left:12px;top:0;bottom:14px;width:2px;background:rgba(0,0,0,.28);border-radius:2px}
+.card .card{margin-bottom:6px}
+.card.leaf .badge{display:none}
+.card.leaf .head{cursor:default}
+.card.flash{animation:fl 1.2s ease-out}@keyframes fl{0%{box-shadow:0 0 0 4px #fff}100%{box-shadow:0 0 0 0 transparent}}
+.card.hide{display:none}#tree.collapsed>.card:not(.lv0){display:none}
+footer{display:flex;gap:10px;padding:10px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+footer button{flex:1;height:52px;border-radius:12px;border:1px solid var(--line2);background:#0a0a0a;font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+footer button:hover{background:#171717}
+</style>
+</head>
+<body>
+<div id="app">
+ <header>
+  <div class="logo"><i class="fa-solid fa-sitemap"></i></div>
+  <div class="ttl"><h1>El POT en Kennedy</h1><small>Modelamiento causal · Decreto 555 de 2021</small></div>
+  <button class="ib" id="bSearch" title="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
+  <button class="ib" id="bPlay" title="Recorrido guiado"><i class="fa-solid fa-play"></i></button>
+ </header>
+ <div id="chips"></div>
+ <div id="search"><input id="q" type="search" placeholder="Buscar en el mapa causal…" autocomplete="off"></div>
+ <div id="scroll">
+  <div class="hint"><i class="fa-solid fa-hand-pointer"></i><span>Toca una tarjeta para desplegarla. El número indica cuántas variables salen de ella. El símbolo ⇄ indica que esa variable conecta con otra rama. El botón ⓘ explica con el guion.</span></div>
+  <div id="tree"></div>
+ </div>
+ <footer>
+  <button id="bAll"><i class="fa-solid fa-angles-down"></i>Expandir todo</button>
+  <button id="bReset"><i class="fa-solid fa-rotate-left"></i>Reiniciar</button>
+ </footer>
+</div>
+<script>
+// Cada nodo: t=título, a=artículos, i=explicación del guion, ic=icono (solo ramas), c=color (solo ramas), k=hijos, l=ids de ramas con las que conecta
+const ROOT = {id:'0', t:'Plan de Ordenamiento Territorial (Decreto 555 de 2021)', ic:'fa-landmark', c:'#ece5d8', i:'El POT intenta organizar a Kennedy con la promesa de la proximidad y los quince minutos. Reconoce parte del problema de Corabastos, pero lo resuelve con intervenciones físicas locales y desarticuladas.', k:[
+ {id:'1', t:'Promesa de proximidad y ciudad de 15 minutos', ic:'fa-person-walking', c:'#d9735f', i:'El POT propone ordenar la localidad bajo la promesa de la proximidad, subdividiéndola en Unidades de Planeamiento Local y planteando Actuaciones Estratégicas.', k:[
+  {id:'1.1', t:'Unidades de Planeamiento Local (UPL)', a:'Arts. 9 y 10', i:'Subdivide la localidad en piezas para ordenar por proximidad.'},
+  {id:'1.2', t:'Actuaciones Estratégicas', a:'Art. 81', i:'Intervenciones físicas priorizadas para transformar sectores de Kennedy.', k:[
+   {id:'1.2.1', t:'Eje Tintal'},
+   {id:'1.2.2', t:'Porvenir'},
+   {id:'1.2.3', t:'Chucua La Vaca', l:['3']}]},
+  {id:'1.3', t:'Manzanas del Cuidado', a:'Arts. 94 y 169', i:'Servicios de cuidado agrupados para acercar la ciudad a las personas. El POT las combina con la descentralización de Corabastos.', l:['2']}]},
+ {id:'2', t:'Descentralizar Corabastos', ic:'fa-warehouse', c:'#c9ad5e', a:'Art. 570 · Sistema de Abastecimiento', i:'Sí comprende la necesidad de descentralizar a Corabastos: concentrar la venta mayorista en un solo punto genera fragilidad en la seguridad alimentaria, colapsa la red vial y degrada los humedales.', k:[
+  {id:'2.1', t:'Fragilidad de la seguridad alimentaria por concentrar la venta mayorista'},
+  {id:'2.2', t:'Colapso de la red vial por el tráfico pesado', a:'Arts. 152 y 308', l:['4']},
+  {id:'2.3', t:'Degradación de los humedales El Burro, Techo y La Vaca', a:'Arts. 47 y 55', l:['3']},
+  {id:'2.4', t:'Meta: pasar de un gran nodo mayorista a una red regional equilibrada', i:'La estrategia se combina con Manzanas del Cuidado.', l:['1']}]},
+ {id:'3', t:'Reservas hídricas protegidas', ic:'fa-droplet', c:'#72b3a8', a:'Arts. 47 y 55', i:'El POT dibuja reservas hídricas protegidas, pero al mismo tiempo consolida el tráfico que las bordea.', k:[
+  {id:'3.1', t:'Humedal El Burro'},
+  {id:'3.2', t:'Humedal de Techo'},
+  {id:'3.3', t:'Humedal La Vaca'},
+  {id:'3.4', t:'Colindan con el corredor de carga que se mantiene', l:['4']}]},
+ {id:'4', t:'Tráfico de tractomulas consolidado', ic:'fa-truck', c:'#a89ad0', a:'Arts. 152 y 308', i:'La norma consolida el paso de tractomulas por la Avenida Ciudad de Cali y la Carrera 80, bordeando los mismos ecosistemas que promete cuidar.', k:[
+  {id:'4.1', t:'Avenida Ciudad de Cali'},
+  {id:'4.2', t:'Carrera 80'},
+  {id:'4.3', t:'Bordea los ecosistemas que promete cuidar', l:['3']}]},
+ {id:'5', t:'Falla de fondo: no ve el tejido vivo', ic:'fa-triangle-exclamation', c:'#e0885a', i:'La falla de fondo del POT es asumir que Corabastos es solo un predio que se puede mover en el mapa.', k:[
+  {id:'5.1', t:'Corabastos tratado como un predio movible', k:[
+   {id:'5.1.1', t:'Ignora la economía popular que sostiene a Kennedy y a la ciudad', i:'Corabastos funciona como el corazón de un tejido vivo de economía popular.'}]},
+  {id:'5.2', t:'Localidad fragmentada en piezas aisladas', i:'Reservas hídricas protegidas conviven con el tráfico de tractomulas que las bordea.', l:['3','4']},
+  {id:'5.3', t:'Sobrecarga regional resuelta con obras locales desarticuladas', k:[
+   {id:'5.3.1', t:'La planificación choca con la realidad del territorio'}]}]},
+ {id:'6', t:'Indicadores del POT y ODS (no son propios)', ic:'fa-chart-line', c:'#8fb36b', i:'Los indicadores son los normativos oficiales del POT y los ODS, no los nuestros. Miden el cumplimiento por la ejecución formal de obras.', k:[
+  {id:'6.1', t:'Índice de espacio público efectivo por habitante'},
+  {id:'6.2', t:'Densidad habitacional por hectárea'},
+  {id:'6.3', t:'Cobertura de equipamientos'},
+  {id:'6.4', t:'Metros lineales de malla vial arterial construida', l:['4']},
+  {id:'6.5', t:'Vínculo con los ODS', k:[
+   {id:'6.5.1', t:'ODS 11 · Ciudades y comunidades sostenibles'},
+   {id:'6.5.2', t:'ODS 9 · Industria, innovación e infraestructura'},
+   {id:'6.5.3', t:'ODS 13 · Acción por el clima'}]},
+  {id:'6.6', t:'Cumplimiento medido por obras construidas y m² ampliados', i:'Cumplir la obra no equivale a resolver el problema ni mide la economía popular.', l:['5']}]}
+]};
+
+const $ = s => document.querySelector(s);
+const byId = {}; let order = [];
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e };
+const esc = s => String(s).split('&').join('&amp;').split('<').join('&lt;');
+function shade(n, branch) { return branch }
+function card(n, depth, color) {
+  byId[n.id] = n;
+  const kids = n.k || [];
+  const c = n.c || color;
+  const d = el('div', 'card lv' + (depth === 0 ? 0 : 1) + (depth <= 1 ? ' top' : '') + (kids.length ? '' : ' leaf'));
+  d.style.setProperty('--c', c); d.dataset.id = n.id;
+  if (depth > 1) d.style.setProperty('--c', 'color-mix(in srgb,' + c + ' ' + Math.max(38, 78 - depth * 12) + '%,#fff)');
+  n.el = d;
+  const head = el('div', 'head');
+  if (n.ic) head.appendChild(el('div', 'ico', '<i class="fa-solid ' + n.ic + '"></i>'));
+  const label = depth === 0 ? 'Fenómeno central' : 'VAR ' + n.id;
+  head.appendChild(el('div', 'tx', '<div class="k">' + label + '</div><div class="t">' + esc(n.t) + '</div>' + (n.a ? '<div class="a">' + esc(n.a) + '</div>' : '')));
+  if (kids.length) head.appendChild(el('span', 'badge', kids.length + ' <i class="fa-solid fa-chevron-right"></i>'));
+  let infoEl = null;
+  if (n.i) { const b = el('button', 'inf', '<i class="fa-solid fa-circle-info"></i>'); b.title = 'Explicación'; b.onclick = ev => { ev.stopPropagation(); infoEl.classList.toggle('on'); b.classList.toggle('on') }; head.appendChild(b) }
+  head.onclick = () => { if (depth === 0) { d.classList.toggle('open'); tree.classList.toggle('collapsed', !d.classList.contains('open')) } else if (kids.length) d.classList.toggle('open') };
+  d.appendChild(head);
+  if (n.i) { infoEl = el('div', 'info', esc(n.i)); d.appendChild(infoEl) }
+  if (n.l && n.l.length) {
+    const L = el('div', 'links');
+    n.l.forEach(id => { const b = el('button', 'lk', '⇄ conecta con VAR ' + id); b.onclick = () => goTo(id); L.appendChild(b) });
+    d.appendChild(L);
+  }
+  if (kids.length && depth > 0) { const K = el('div', 'kids'); kids.forEach(k => K.appendChild(card(k, depth + 1, c))); d.appendChild(K) }
+  return d;
+}
+function goTo(id) {
+  let e = byId[id].el;
+  for (let p = e.parentElement; p; p = p.parentElement) if (p.classList && p.classList.contains('card')) p.classList.add('open');
+  e.classList.add('open'); e.scrollIntoView({behavior: 'smooth', block: 'center'});
+  e.classList.remove('flash'); void e.offsetWidth; e.classList.add('flash');
+}
+const tree = $('#tree');
+const rootEl = card(ROOT, 0, ROOT.c); tree.appendChild(rootEl); ROOT.k.forEach(b => tree.appendChild(card(b, 1, b.c)));
+// las ramas quedan como hijas de la tarjeta central; el chip superior abre cada una
+ROOT.k.forEach(b => { const c = el('button', 'chip', '<i class="fa-solid ' + b.ic + '"></i>' + esc(b.t.length > 26 ? b.t.slice(0, 24) + '…' : b.t)); c.style.setProperty('--c', b.c); c.onclick = () => { rootEl.classList.add('open'); goTo(b.id) }; $('#chips').appendChild(c) });
+rootEl.classList.add('open');
+function setAll(open) { document.querySelectorAll('.card').forEach(c => { if (c.querySelector('.kids')) c.classList.toggle('open', open) }) }
+$('#bAll').onclick = () => setAll(true);
+$('#bReset').onclick = () => { setAll(false); rootEl.classList.add('open'); document.querySelectorAll('.info,.inf').forEach(x => x.classList.remove('on')); $('#q').value = ''; filter(''); $('#scroll').scrollTo({top: 0, behavior: 'smooth'}) };
+$('#bSearch').onclick = () => { $('#search').classList.toggle('on'); if ($('#search').classList.contains('on')) $('#q').focus() };
+function filter(v) {
+  v = v.trim().toLowerCase();
+  const all = document.querySelectorAll('.card');
+  all.forEach(c => c.classList.remove('hide'));
+  if (!v) return;
+  const hit = n => (n.t + ' ' + (n.a || '') + ' ' + (n.i || '')).toLowerCase().indexOf(v) >= 0;
+  const keep = n => { let any = hit(n); (n.k || []).forEach(k => { if (keep(k)) any = true }); n.el.classList.toggle('hide', !any); if (any && (n.k || []).some(k => keep2(k))) n.el.classList.add('open'); return any };
+  const keep2 = n => !n.el.classList.contains('hide');
+  keep(ROOT);
+}
+$('#q').addEventListener('input', e => filter(e.target.value));
+// recorrido guiado: abre las ramas una a una
+let tour = -1, timer = null;
+$('#bPlay').onclick = () => {
+  const ic = $('#bPlay i');
+  if (timer) { clearInterval(timer); timer = null; ic.className = 'fa-solid fa-play'; return }
+  setAll(false); rootEl.classList.add('open'); tour = -1; ic.className = 'fa-solid fa-pause';
+  const next = () => { tour++; if (tour >= ROOT.k.length) { clearInterval(timer); timer = null; ic.className = 'fa-solid fa-play'; return } const b = ROOT.k[tour]; b.el.classList.add('open'); goTo(b.id) };
+  next(); timer = setInterval(next, 4500);
+};
+</script>
+</body>
+</html>

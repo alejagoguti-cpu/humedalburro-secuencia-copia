@@ -16,9 +16,9 @@ const ICON = { 'Institucional': 'fa-landmark', 'Corporativo': 'fa-building', 'Co
   });
   const ix = new Map(nodes.map((n, i) => [n.id, i]));
   const edges = rows(wb.getWorksheet('ARISTAS'), 12).map(r => ({ id: r[0], s: ix.get(r[1]), t: ix.get(r[2]), type: tipos.findIndex(t => t.name === r[3]), detail: r[4], why: r[5], impact: r[6], w: +r[7] || 1, power: r[9], evidence: r[11] }));
-  const data = { capas, tipos, nodes, edges: edges.filter(e => e.s != null && e.t != null), terr: TERR };
-  const OUT = process.argv[3] || 'red-actores-plana.html'; const LF = path.join(ROOT, 'datos', process.argv[2] ? 'layout-pot-plana.json' : 'layout-plana.json'); if (LF && fs.existsSync(LF)) data.pos = JSON.parse(fs.readFileSync(LF, 'utf8'));
+  const data = { capas, tipos, nodes, edges: edges.filter(e => e.s != null && e.t != null), terr: TERR === '-' ? '' : TERR };
+  const OUT = process.argv[3] || 'red-actores-plana.html'; const LF = path.join(ROOT, 'datos', process.argv[2] ? 'layout-' + OUT.replace('.html', '') + '.json' : 'layout-plana.json'); if (LF && fs.existsSync(LF)) data.pos = JSON.parse(fs.readFileSync(LF, 'utf8'));
   const html = fs.readFileSync(path.join(__dirname, 'plana-template.html'), 'utf8').replace('/*DATA*/', 'const DATA=' + JSON.stringify(data).replace(/</g, '\\u003c') + ';');
-  fs.writeFileSync(path.join(ROOT, OUT), process.argv[2] ? html.replace('Red de actores H y no H — Kennedy (plana)', 'Red POT — Kennedy (plana 2D)').replace('<h1>Red de actores · Kennedy</h1><p>Humanos y no humanos · Corte II</p>', '<h1>Red POT · Kennedy</h1><p>Elementos tangibles · plano 2D</p>') : html);
+  const TT = (process.argv[6] || '').split('|'); fs.writeFileSync(path.join(ROOT, OUT), TT[0] ? html.replace('Red de actores H y no H — Kennedy (plana)', TT[0]).replace('<h1>Red de actores · Kennedy</h1><p>Humanos y no humanos · Corte II</p>', '<h1>' + TT[1] + '</h1><p>' + TT[2] + '</p>') : html);
   console.log('OK', nodes.length, 'nodos', edges.length, 'aristas');
 })().catch(e => { console.error(e); process.exit(1); });
