@@ -683,7 +683,7 @@ $('#bPlay').onclick = () => {
       n.nel = e; n.nx = 0; n.ny = 0; n.nvx = 0; n.nvy = 0; n.nv = false; nw.appendChild(e);
     });
     all.forEach(n => { if (n.par) net.links.push({a: n.par, b: n, x: false}); (n.l || []).forEach(id => net.links.push({a: n, b: byId[id], x: true}));
-      const k = n.k || []; if (k.length > 1) k.forEach((c, i) => { if (k.length > 2 || i === 0) net.links.push({a: c, b: k[(i + 1) % k.length], x: false, s: true}) }); // hermanas unidas entre sí: nada queda suelto
+      const k = n.k || []; for (let i = 0; i < k.length; i++) for (let j = i + 1; j < k.length; j++) net.links.push({a: k[i], b: k[j], x: false, s: true}); // hermanas conectadas entre sí
     });
     net.links.forEach(l => { l.el = mk('line', {class: 'nlk' + (l.x ? ' x' : '') + (l.s ? ' s' : '') + ' hide'}); nsvg.insertBefore(l.el, nsvg.firstChild) });
   }
@@ -695,10 +695,9 @@ $('#bPlay').onclick = () => {
   }
   function netPlace(n) { n.nel.style.transform = 'translate(' + n.nx.toFixed(1) + 'px,' + n.ny.toFixed(1) + 'px)' }
   function netUpdate() {
-    let md = 0; net.exp.forEach(n => { if (n.d + 1 > md) md = n.d + 1 });
-    const now = all.filter(n => n.d >= md && (n.d === 0 || net.exp.has(n.par))), set = new Set(now);
-    const ghosts = new Set(); // extremos de enlaces ⇄ que quedaron fuera: se ven atenuados para que la conexión no quede colgando
-    net.links.forEach(l => { if (!l.x) return; const A = set.has(l.a), B = set.has(l.b); if (A && !B) ghosts.add(l.b); else if (B && !A) ghosts.add(l.a) });
+    const last = [...net.exp].pop(), desc = n => (n.k || []).reduce((a, k) => a.concat([k], desc(k)), []);
+    const now = !last ? [ROOT] : last === ROOT ? ROOT.k.slice() : desc(last), set = new Set(now); // centro → ramas → toda la red de la rama tocada
+    const ghosts = new Set();
     let cx = 0, cy = 0; net.vis.forEach(n => { cx += n.nx; cy += n.ny }); if (net.vis.length) { cx /= net.vis.length; cy /= net.vis.length }
     const groups = new Map();
     now.filter(n => !n.nv).forEach(n => { const p = n.par && n.par.nv ? n.par : null; if (!groups.has(p)) groups.set(p, []); groups.get(p).push(n) });
@@ -768,8 +767,8 @@ $('#bPlay').onclick = () => {
   }
   function netClick(n) {
     net.sel = n; netInfo(n);
-    if (n.ng) { const ch = []; for (let p = n.par; p; p = p.par) ch.unshift(p); net.exp.clear(); ch.forEach(p => net.exp.add(p)) } // bola atenuada: lleva hasta ella
-    else if ((n.k || []).length) { if (net.exp.has(n)) (function c(x) { net.exp.delete(x); (x.k || []).forEach(c) })(n); else net.exp.add(n) }
+    if (n === ROOT) { net.exp.clear(); net.exp.add(ROOT) }
+    else if (n.d === 1) { net.exp.clear(); net.exp.add(ROOT); net.exp.add(n) } // bola de color: se esconden todas y sale la red de su rama
     netUpdate();
   }
   function netReset() {
