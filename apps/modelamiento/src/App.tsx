@@ -49,13 +49,13 @@ function layout(b: number, m: boolean): Record<string, St> {
   L.hRel = b === 8 ? T(0.5, hy, 1, 1, 0.35) : T(0.5, hy, 0, 0.98);
   L.hRed = b >= 9 ? T(0.5, m ? 0.2 : 0.17, 1, 1, 0.5) : T(0.5, m ? 0.2 : 0.17, 0, 0.98);
   // dinámicas
-  const dp = m ? [[0.25, 0.44], [0.75, 0.44], [0.25, 0.88], [0.75, 0.88]] : [[0.15, 0.52], [0.85, 0.52], [0.15, 0.8], [0.85, 0.8]];
+  const dp = m ? [[0.25, 0.43], [0.75, 0.43], [0.25, 0.72], [0.75, 0.72]] : [[0.15, 0.47], [0.85, 0.47], [0.15, 0.73], [0.85, 0.73]];
   DYNS.forEach((d, i) => { L[d.id] = b >= 4 + i ? T(dp[i][0], dp[i][1], dim, 1, 0.1) : T(dp[i][0], dp[i][1], 0, 0.96); });
   // red propia
   L.hub = b >= 9 ? T(0.5, m ? 0.4 : 0.42, 1, 1, 0.5) : T(0.5, m ? 0.4 : 0.42, 0, 0.96);
   const cp = m ? [[0.5, 0.54], [0.5, 0.65], [0.5, 0.76]] : [[0.2, 0.64], [0.5, 0.64], [0.8, 0.64]];
   COMPONENTS.forEach((c, i) => { L[c.id] = b >= 9 ? T(cp[i][0], cp[i][1], 1, 1, 0.9 + i * 0.35) : T(cp[i][0], cp[i][1], 0, 0.96); });
-  L.caption = b === 8 ? T(0.5, m ? 0.88 : 0.875, 1, 1, 2) : T(0.5, m ? 0.88 : 0.875, 0);
+  L.caption = b >= 4 && b <= 8 ? T(0.5, m ? 0.84 : 0.86, 1, 1, b === 8 ? 2 : 1.1) : T(0.5, m ? 0.84 : 0.86, 0);
   L.cta = b === 10 ? T(0.5, m ? 0.88 : 0.82, 1, 1, 1.2) : T(0.5, m ? 0.88 : 0.82, 0);
   return L;
 }
@@ -72,7 +72,7 @@ const CONNS: Conn[] = [
   { id: 'axL', kind: 'axes', a: 'el:ejes', b: 'el:axL', color: COLORS.ink, w: 1, show: (b) => b >= 1 && b < 9, op: () => 0.85, delay: (b) => (b === 1 ? 1 : 0.2) },
   { id: 'kR', kind: 'kennedy', a: 'el:axR', b: 'kennedy', color: COLORS.coral, w: 1.2, show: (b) => b === 2, op: () => 0.9, delay: () => 0.8 },
   { id: 'kL', kind: 'kennedy', a: 'el:axL', b: 'kennedy', color: COLORS.coral, w: 1.2, show: (b) => b === 2, op: () => 0.9, delay: () => 0.8 },
-  ...DYNS.map((d, i): Conn => ({ id: 'loc' + (i + 1), kind: 'loc', a: 'el:' + d.id, b: 'place:' + d.place, color: d.color, w: 1.4, show: (b) => b >= 4 + i && b < 9, op: (b) => (b >= 8 ? 0.4 : 0.95), delay: () => 0.55 })),
+  ...DYNS.map((d, i): Conn => ({ id: 'loc' + (i + 1), kind: 'loc', a: 'el:' + d.id, b: 'place:' + d.place, color: d.color, w: 1.4, show: (b) => b >= 4 + i && b < 8, op: () => 0.95, delay: () => 0.55 })),
   ...RELS.map((r, i): Conn => ({ id: r.id, kind: 'rel', a: 'el:' + r.a, b: 'el:' + r.b, color: '#ffffff', w: 2, bulge: [-70, 46, 56, 56][i], show: (b) => b >= 8 && b < 9, op: () => 1, delay: () => 0.5 + i * 0.5 })),
   ...COMPONENTS.map((c, i): Conn => ({ id: 'hub' + (i + 1), kind: 'hub', a: 'el:hub', b: 'el:' + c.id, color: COLORS.ink, w: 1.1, show: (b) => b >= 9, op: () => 0.9, delay: () => 0.9 + i * 0.35 })),
 ];
@@ -273,11 +273,11 @@ export default function App() {
       map.fitBounds([[bogota[0], bogota[1]], [bogota[2], bogota[3]]], { padding: 30, duration: 0 });
       // marcadores HTML (sin glifos remotos)
       const markers: Record<string, HTMLElement> = {};
-      const addMk = (id: string, ll: LngLat, label: string, cls: string, color = COLORS.ink, anchor: 'left' | 'center' = 'left') => {
+      const addMk = (id: string, ll: LngLat, label: string, cls: string, color = COLORS.ink, anchor: 'left' | 'center' = 'left', tag = '') => {
         const outer = document.createElement('div');
         const inner = document.createElement('div');
         inner.className = 'mk ' + cls; inner.style.setProperty('--c', color);
-        inner.innerHTML = '<i></i><span>' + label + '</span>';
+        inner.innerHTML = '<i></i><span>' + label + '</span>' + (tag ? '<em style="background:' + color + '">' + tag + '</em>' : '');
         outer.appendChild(inner);
         new maplibregl.Marker({ element: outer, anchor }).setLngLat(ll).addTo(map!);
         markers[id] = inner;
@@ -289,7 +289,7 @@ export default function App() {
       addMk('tintal', ctr('UPL13'), 'Tintal', 'upl', COLORS.mut, 'center');
       addMk('porvenir', ctr('UPL15'), 'Porvenir', 'upl', COLORS.mut, 'center');
       addMk('patiob', ctr('UPL14'), 'Patio Bonito', 'upl', COLORS.mut, 'center');
-      DYNS.forEach((d) => addMk(d.place, PLACES[d.place].lngLat, PLACES[d.place].name, 'pulse', d.color));
+      DYNS.forEach((d) => addMk(d.place, PLACES[d.place].lngLat, PLACES[d.place].name, 'pulse', d.color, 'left', d.n));
       api.current = { map, bogota, kennedy, cluster, markers, kennedyCenter: [(cluster[0] + cluster[2]) / 2, (cluster[1] + cluster[3]) / 2] as LngLat, hl: { v: 0 }, three: { ready: false, on: false, k: { v: 0 } } };
       (window as unknown as { __map: maplibregl.Map }).__map = map; // utilidad de depuración
       map.on('load', () => {
@@ -369,7 +369,7 @@ export default function App() {
     clearTimers();
     const wrap = mapWrapRef.current!;
     const vis = b >= 2;
-    gsap.to(wrap, { opacity: vis ? (b >= 9 ? 0.28 : b === 8 ? 0.5 : 1) : 0, scale: vis ? 1 : 0.94, duration: reduced() ? 0 : 1.5, ease: 'power2.inOut', delay: vis && prev < 2 ? 0.5 : 0 });
+    gsap.to(wrap, { opacity: vis ? (b >= 9 ? 0.28 : b >= 8 ? 0.5 : b >= 4 ? 0.62 : 1) : 0, scale: vis ? 1 : 0.94, duration: reduced() ? 0 : 1.5, ease: 'power2.inOut', delay: vis && prev < 2 ? 0.5 : 0 });
     if (b < 2) {
       showMk([]); setHl(0, 0.4); to3D(false);
       later(() => { if (beatRef.current < 2) a.map.fitBounds([[a.bogota[0], a.bogota[1]], [a.bogota[2], a.bogota[3]]], { padding: camPad(), duration: 0 }); }, 1600);
@@ -392,6 +392,7 @@ export default function App() {
     }
     // en la secuencia 4 solo se ve cada lugar cuando su dinámica aparece; Corabastos y El Burro ya están identificados desde el territorio
     if (b >= 3 && b < 9) showMk(Array.from(new Set(['corabastos', 'burro', ...dynMk(b)])));
+    Object.values(a.markers).forEach((el) => el.classList.toggle('tag', b >= 4));
     return clearTimers;
   }, [beat, mapReady]);
 
@@ -526,14 +527,13 @@ export default function App() {
         {DYNS.map((d) => {
           const Ic = DYN_ICONS[d.id];
           return (
-            <div key={d.id} ref={reg(d.id)} className="abs node" style={{ ...cv(d.color), width: m ? '47vw' : 'min(23vw,340px)' }}>
+            <div key={d.id} ref={reg(d.id)} className="abs node" style={{ ...cv(d.color), width: m ? '45vw' : 'min(20vw,290px)' }}>
               <div className="wm"><Ic /></div>
               <div className="tile"><Ic /></div>
               <div className="txt">
                 <p className="id">DINÁMICA {d.n}</p>
                 <p className="lb">{d.title}</p>
-                {!m && <p className="node-note">{d.note}</p>}
-              </div>
+                </div>
             </div>
           );
         })}
@@ -555,7 +555,12 @@ export default function App() {
         })}
 
         <div ref={reg('caption')} className="abs text-center" style={{ width: m ? '86vw' : '52vw', pointerEvents: 'none', background: 'rgba(0,0,0,0.88)', border: '1px solid #383838', borderRadius: 14, padding: '12px 18px' }}>
-          {rel ? (
+          {beat >= 4 && beat <= 7 ? (
+            <p className="node-title" style={{ fontWeight: 400, fontSize: 'clamp(13px,1.1vw,17px)' }}>
+              <span className="kicker block" style={{ color: DYNS[beat - 4].color }}>Dinámica {DYNS[beat - 4].n} · {DYNS[beat - 4].title}</span>
+              {DYNS[beat - 4].note}
+            </p>
+          ) : rel ? (
             <p className="node-title" style={{ fontWeight: 400, fontSize: 'clamp(13px,1.1vw,17px)' }}>
               <span className="kicker block" style={{ color: COLORS.coral }}>{rel.label}</span>
               {rel.text} <span style={{ color: COLORS.mut }}>· {rel.source}</span>
