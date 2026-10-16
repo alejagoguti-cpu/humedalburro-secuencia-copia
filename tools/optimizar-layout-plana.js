@@ -6,7 +6,7 @@ const ROOT = path.join(__dirname, '..');
 const MIN = +(process.argv[2] || 5);
 let seed = +(process.argv[3] || 1);
 const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
-const html = fs.readFileSync(path.join(ROOT, 'red-actores-plana.html'), 'utf8');
+const html = fs.readFileSync(path.join(ROOT, process.argv[4] || 'red-actores-plana.html'), 'utf8');
 const D = JSON.parse(html.match(/const DATA=(.*?);\n/)[1]);
 const { nodes, edges } = D, N = nodes.length;
 // ---- mismas reglas de texto que la página (sin expresiones regulares)
@@ -28,7 +28,7 @@ function wrapLines(s) {
 }
 const deg = new Array(N).fill(0); edges.forEach(e => { deg[e.s]++; deg[e.t]++ });
 const R = nodes.map((n, i) => { const lines = wrapLines(labelOf(n)); const mc = Math.max(...lines.map(l => l.length)); const wE = mc * .56, hE = lines.length * 1.17 + 1.1; const rEm = Math.sqrt((wE / 2) ** 2 + (hE / 2) ** 2); return Math.max(Math.min(80, 36 + 7 * Math.sqrt(deg[i])), 11 * rEm + 7) });
-const MX = 2600, MY = 1500;
+const MX = Math.round(2600 * Math.sqrt(nodes.length / 40)), MY = Math.round(1500 * Math.sqrt(nodes.length / 40));
 const P = nodes.map(() => ({ x: 100 + rnd() * MX, y: 100 + rnd() * MY }));
 const inc = nodes.map(() => []); edges.forEach((e, k) => { inc[e.s].push(k); inc[e.t].push(k) });
 const ccw = (a, b, c) => (c.y - a.y) * (b.x - a.x) - (b.y - a.y) * (c.x - a.x);
@@ -56,11 +56,11 @@ function anneal(iters) {
     const d = local(i) - before; if (d > 0 && rnd() > Math.exp(-d / Math.max(.3, f * f * 600))) { P[i].x = ox; P[i].y = oy }
   }
 }
-const OUT = path.join(ROOT, 'datos', 'layout-plana.json');
-let best = null, bc = 1e18, bcr = 99, bh = 99, t0 = Date.now();
+const OUT = path.join(ROOT, 'datos', process.argv[5] || 'layout-plana.json');
+let best = null, bc = 1e18, bcr = 1e9, bh = 1e9, t0 = Date.now();
 while (Date.now() - t0 < MIN * 60000) {
   P.forEach(p => { p.x = 100 + rnd() * MX; p.y = 100 + rnd() * MY });
-  anneal(350000);
+  anneal(+(process.argv[6] || 350000));
   const c = total(), cr = crossings(), h = hits();
   if (cr + h < bcr + bh || (cr + h === bcr + bh && c < bc)) {
     bc = c; bcr = cr; bh = h; best = P.map(p => ({ x: +p.x.toFixed(1), y: +p.y.toFixed(1) }));
