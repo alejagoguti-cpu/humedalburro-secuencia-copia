@@ -190,6 +190,9 @@ footer button:hover{background:#171717}
 .rel{display:flex;align-items:center;gap:9px;padding:5px 6px;border-radius:10px;cursor:pointer;font:400 12px/1.25 var(--sans);color:#d4d4d4;transition:background .15s}
 .rel:hover{background:#151515}.rel .ri{flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 14%,#000);font-size:12px}
 .rel small{margin-left:auto;font:400 10px var(--mono);color:var(--dim);flex:none}
+.gflash{position:absolute;inset:0;pointer-events:none;z-index:3;opacity:0;background:linear-gradient(105deg,transparent 32%,rgba(255,255,255,.3) 50%,transparent 68%);transform:translateX(-100%)}
+.gnode.flash .gflash{animation:gsweep 1s ease-out}
+@keyframes gsweep{0%{opacity:1;transform:translateX(-100%)}100%{opacity:1;transform:translateX(100%)}}
 #gintro{transition:opacity .5s}#gintro.out{opacity:0}
 .gdot{transform-box:fill-box;transform-origin:center;animation:gdotin .6s cubic-bezier(.2,.9,.3,1.3) both}
 @keyframes gdotin{from{transform:scale(0);opacity:0}}
@@ -370,13 +373,13 @@ $('#bPlay').onclick = () => {
     const div = document.createElement('div');
     div.className = 'gnode d' + (d >= 2 ? 2 : d);
     const lab = d === 0 ? 'Fenómeno central' : 'VAR ' + n.id;
-    div.innerHTML = '<div class="gglare"></div><div class="gwm"><i class="fa-solid ' + n.bic + '"></i></div>'
+    div.innerHTML = '<div class="gglare"></div><div class="gflash"></div><div class="gwm"><i class="fa-solid ' + n.bic + '"></i></div>'
       + '<div class="gtile"><i class="fa-solid ' + n.bic + '"></i></div>'
       + '<div class="gtxt"><div class="gid">' + lab + (n.l ? ' <span class="gxb">⇄</span>' : '') + '</div><div class="glb">' + esc(n.t) + '</div></div>'
       + (kids.length ? '<span class="gcnt">' + kids.length + ' <i class="fa-solid fa-chevron-right"></i></span>' : '');
     div.addEventListener('mousemove', e => { const r = div.getBoundingClientRect(); div.style.setProperty('--mx', (e.clientX - r.left) / r.width * 100 + '%'); div.style.setProperty('--my', (e.clientY - r.top) / r.height * 100 + '%') });
     div.addEventListener('mouseenter', () => { hoverN = n; hotX() }); div.addEventListener('mouseleave', () => { hoverN = null; hotX() });
-    div.addEventListener('click', ev => { ev.stopPropagation(); hideHint(); ripple(n); select(n); if (kids.length) toggle(n) });
+    div.addEventListener('click', ev => { ev.stopPropagation(); hideHint(); ripple(n); flash(n); select(n); if (kids.length) toggle(n); else focusOn(n) });
     n.gel = div; world.appendChild(div);
     if (parent) {
       const g = mk('g', {});
@@ -449,20 +452,20 @@ $('#bPlay').onclick = () => {
   }
   function pulse(n) { // pulso viajero por el conector hacia n
     if (!n.lk) return; const t = n.lk.trav; t.classList.remove('go'); void t.getBoundingClientRect(); t.classList.add('go');
-    n.gel.classList.remove('ping'); void n.gel.offsetWidth; n.gel.classList.add('ping');
+    n.gel.classList.remove('ping'); void n.gel.offsetWidth; n.gel.classList.add('ping'); flash(n);
   }
   function toggle(n) {
     exitIntro(); n.open = !n.open;
     if (!n.open) (function c(x) { (x.k || []).forEach(k => { k.open = false; c(k) }) })(n);
     layout();
     if (n.open) (n.k || []).forEach((k, i) => setTimeout(() => pulse(k), 120 + i * 60));
-    if (!tourT) fit(true);
+    if (!tourT) { if (!n.par && !n.open) fit(true); else focusOn(n.open ? n : (n.par || n)) }
   }
   function ripple(n) { const r = document.createElement('div'); r.className = 'gripple'; r.style.setProperty('--c', n.col); r.style.left = n.gcx + 'px'; r.style.top = n.gcy + 'px'; world.appendChild(r); setTimeout(() => r.remove(), 1000) }
 
   // ---- cámara
   const T = {x: 0, y: 0, k: 1};
-  function apply(anim) { world.classList.toggle('anim', !!anim); world.style.transform = 'translate(' + T.x + 'px,' + T.y + 'px) scale(' + T.k + ')'; mini() }
+  function apply(anim, dur) { world.style.transition = anim ? 'transform ' + (dur || .65) + 's cubic-bezier(.3,.8,.3,1)' : 'none'; world.style.transform = 'translate(' + T.x + 'px,' + T.y + 'px) scale(' + T.k + ')'; mini() }
   function box() {
     let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
     all.forEach(n => { if (!n.vis) return; const s = SZ(n); x0 = Math.min(x0, n.gx); x1 = Math.max(x1, n.gx + s.w); y0 = Math.min(y0, n.gy - s.h / 2); y1 = Math.max(y1, n.gy + s.h / 2) });
@@ -473,6 +476,16 @@ $('#bPlay').onclick = () => {
     T.k = Math.min(1.15, Math.max(.22, Math.min((vw - L - R) / w, (vh - Tp - B) / h)));
     T.x = L + (vw - L - R - w * T.k) / 2 - b.x0 * T.k; T.y = Tp + (vh - Tp - B - h * T.k) / 2 - b.y0 * T.k; apply(anim);
   }
+  // zoom de cámara para que se alcance a leer la tarjeta y sus variables (pensado para video)
+  function focusOn(n) {
+    const list = [n].concat(n.open ? (n.k || []) : []);
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    list.forEach(m => { const z = SZ(m); x0 = Math.min(x0, m.gx); x1 = Math.max(x1, m.gx + z.w); y0 = Math.min(y0, m.gy - z.h / 2); y1 = Math.max(y1, m.gy + z.h / 2) });
+    const vw = innerWidth, vh = innerHeight, L = 80, R = 320, Tp = 100, B = 120, w = x1 - x0, h = y1 - y0;
+    const k = Math.max(.8, Math.min(1.35, Math.min((vw - L - R) / w, (vh - Tp - B) / h)));
+    T.k = k; T.x = L + (vw - L - R - w * k) / 2 - x0 * k; T.y = Tp + (vh - Tp - B - h * k) / 2 - y0 * k; apply(true, 1.1);
+  }
+  function flash(n) { n.gel.classList.remove('flash'); void n.gel.offsetWidth; n.gel.classList.add('flash') }
   function center(n) { T.x = innerWidth / 2 - n.gcx * T.k; T.y = innerHeight / 2 - n.gcy * T.k; apply(true) }
   function zoomAt(f, cx, cy) { const k = Math.min(2.4, Math.max(.2, T.k * f)), r = k / T.k; T.x = cx - (cx - T.x) * r; T.y = cy - (cy - T.y) * r; T.k = k; apply(false) }
 
@@ -502,7 +515,7 @@ $('#bPlay').onclick = () => {
     body.innerHTML = h; box2.classList.add('show');
     body.querySelectorAll('.rel').forEach(el => el.onclick = () => reveal(rels[+el.dataset.i][0]));
   }
-  function reveal(t) { exitIntro(); for (let p = t.par; p; p = p.par) p.open = true; layout(); select(t); setTimeout(() => center(t), 60) }
+  function reveal(t) { exitIntro(); for (let p = t.par; p; p = p.par) p.open = true; layout(); select(t); setTimeout(() => { focusOn(t.open ? t : (t.par || t)); flash(t) }, 60) }
   document.getElementById('gClose').onclick = clearSel;
 
   // ---- barra superior
@@ -541,7 +554,7 @@ $('#bPlay').onclick = () => {
   function count(n) { let c = 0; (function w(x) { (x.k || []).forEach(k => { c++; w(k) }) })(n); return c }
   function buildLegend() {
     const L = document.getElementById('gleg'); L.innerHTML = '';
-    ROOT.k.forEach(b => { const d = document.createElement('div'); d.className = 'li'; d.style.setProperty('--c', b.col); d.style.setProperty('--ink', b.ink); d.innerHTML = '<i><i class="fa-solid ' + b.bic + '" style="font-size:13px;width:auto;height:auto;background:none"></i></i><span>' + esc(b.t.length > 26 ? b.t.slice(0, 25) + '…' : b.t) + '</span><b>' + count(b) + '</b>'; d.onclick = () => { exitIntro(); ROOT.open = true; b.open = true; layout(); setTimeout(() => { select(b); center(b); (b.k || []).forEach((k, i) => setTimeout(() => pulse(k), 100 + i * 60)) }, 60) }; L.appendChild(d) });
+    ROOT.k.forEach(b => { const d = document.createElement('div'); d.className = 'li'; d.style.setProperty('--c', b.col); d.style.setProperty('--ink', b.ink); d.innerHTML = '<i><i class="fa-solid ' + b.bic + '" style="font-size:13px;width:auto;height:auto;background:none"></i></i><span>' + esc(b.t.length > 26 ? b.t.slice(0, 25) + '…' : b.t) + '</span><b>' + count(b) + '</b>'; d.onclick = () => { exitIntro(); ROOT.open = true; b.open = true; layout(); setTimeout(() => { select(b); focusOn(b); flash(b); (b.k || []).forEach((k, i) => setTimeout(() => pulse(k), 100 + i * 60)) }, 60) }; L.appendChild(d) });
   }
   function stats() { const v = all.filter(n => n.vis).length; document.getElementById('gstat').innerHTML = '<div><b>' + v + '/' + all.length + '</b><span>nodos</span></div><div><b>' + xls.length + '</b><span>enlaces ⇄</span></div>' }
   document.getElementById('gLegTog').onclick = () => document.getElementById('glegend').classList.toggle('open');
