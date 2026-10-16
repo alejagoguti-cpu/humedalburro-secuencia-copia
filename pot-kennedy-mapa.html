@@ -62,9 +62,54 @@ header{display:flex;align-items:center;gap:12px;padding:14px 16px 10px}
 footer{display:flex;gap:10px;padding:10px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
 footer button{flex:1;height:52px;border-radius:12px;border:1px solid var(--line2);background:#0a0a0a;font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
 footer button:hover{background:#171717}
+#graph{display:none;position:fixed;inset:0;background:radial-gradient(ellipse at 40% 50%,#0d0d10,#050506 70%);overflow:hidden;cursor:grab;touch-action:none}
+#graph.drag{cursor:grabbing}
+#graph::before{content:"";position:absolute;inset:0;background-image:radial-gradient(#1d1d22 1px,transparent 1px);background-size:26px 26px;opacity:.7;pointer-events:none}
+#gtop{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:12px;padding:12px 20px;z-index:5;cursor:default}
+#gtop .ttl{flex:1;min-width:0}
+#gtop .gs{position:relative;width:min(320px,28vw)}
+#gtop .gs input{width:100%;height:46px;border-radius:12px;border:1px solid var(--line2);background:#0a0a0a;color:var(--fg);padding:0 14px 0 40px;font:inherit;font-size:14px;outline:none}
+#gtop .gs i{position:absolute;left:14px;top:15px;color:var(--mut);font-size:15px}
+.gb{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 18px;border-radius:12px;border:1px solid var(--line2);background:#0a0a0a;font-size:14px;font-weight:600}
+.gb:hover{background:#171717}.gb.pri{background:#f0f0f0;color:#000;border-color:#f0f0f0}.gb.pri:hover{background:#fff}
+#gworld{position:absolute;left:0;top:0;transform-origin:0 0}
+#gsvg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.gl{fill:none;stroke-width:1.6;opacity:.75}
+.gl.x{stroke:#777;stroke-dasharray:5 5;opacity:.55;stroke-width:1.2}
+.gl.flow{stroke-dasharray:7 7;animation:fw 1s linear infinite;opacity:1;stroke-width:2.2}@keyframes fw{to{stroke-dashoffset:-28}}
+.gn{position:absolute;width:250px;height:72px;border-radius:12px;display:flex;align-items:center;gap:9px;padding:0 10px 0 11px;cursor:pointer;transition:left .45s cubic-bezier(.2,.8,.2,1),top .45s cubic-bezier(.2,.8,.2,1),opacity .3s,box-shadow .2s;user-select:none}
+.gn.hid{opacity:0;pointer-events:none}
+.gn .gi{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;font-size:16px;flex:none}
+.gn .gt{flex:1;min-width:0;font-size:12px;font-weight:600;line-height:1.28;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.gn .gk{display:block;font:500 8.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;opacity:.6;margin-bottom:2px}
+.gn .gc{min-width:30px;height:22px;border-radius:99px;background:#000;color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:4px;flex:none}
+.gn .gc i{font-size:8px}
+.gn.l0{background:#ece5d8;color:#14110d;height:84px;width:262px}.gn.l0 .gi{border:2px solid #000;width:44px;height:44px;font-size:20px}
+.gn.l1{background:var(--c);color:#14110d}.gn.l1 .gi{background:rgba(255,255,255,.24);border:1px solid rgba(0,0,0,.2)}
+.gn.lx{background:#0c0c0e;color:#eee;border:1px solid color-mix(in srgb,var(--c) 50%,#000);box-shadow:inset 3px 0 0 var(--c)}
+.gn.sel{box-shadow:0 0 0 2px #fff}
+.gn.dim{opacity:.25}.gn.hit{box-shadow:0 0 0 2px #ffd54a}
+.gn .gx{font-size:10px;opacity:.8;margin-left:3px}
+#gpanel{position:absolute;left:20px;bottom:20px;width:min(380px,32vw);border:1px solid var(--line2);background:rgba(8,8,10,.94);border-radius:14px;padding:14px 16px;font-size:13px;line-height:1.5;display:none;z-index:5;cursor:default}
+#gpanel.on{display:block}#gpanel h3{font-size:14px;margin-bottom:2px}#gpanel .a{font:500 11px var(--mono);color:var(--mut);margin-bottom:6px}
+#gpanel .lk{margin-top:8px;margin-right:6px;color:var(--fg);border-color:var(--line2);background:#111}
+#gpanel .lk:hover{background:#fff;color:#000}
+@media(min-width:900px){#app{display:none}#graph{display:block}}
 </style>
 </head>
 <body>
+<div id="graph">
+ <div id="gtop">
+  <div class="logo"><i class="fa-solid fa-sitemap"></i></div>
+  <div class="ttl"><h1>El POT en Kennedy</h1><small>Modelamiento dinámico · Mapa causal · Decreto 555 de 2021</small></div>
+  <div class="gs"><i class="fa-solid fa-magnifying-glass"></i><input id="gq" type="search" placeholder="Buscar variable…" autocomplete="off"></div>
+  <button class="gb pri" id="gPlay"><i class="fa-solid fa-play"></i> Propagar</button>
+  <button class="gb" id="gAll"><i class="fa-solid fa-angles-down"></i> Expandir todo</button>
+  <button class="gb" id="gReset"><i class="fa-solid fa-rotate-left"></i> Reiniciar</button>
+ </div>
+ <svg id="gsvg"></svg><div id="gworld"></div>
+ <div id="gpanel"></div>
+</div>
 <div id="app">
  <header>
   <div class="logo"><i class="fa-solid fa-sitemap"></i></div>
@@ -191,6 +236,117 @@ $('#bPlay').onclick = () => {
   const next = () => { tour++; if (tour >= ROOT.k.length) { clearInterval(timer); timer = null; ic.className = 'fa-solid fa-play'; return } const b = ROOT.k[tour]; b.el.classList.add('open'); goTo(b.id) };
   next(); timer = setInterval(next, 4500);
 };
+</script>
+<script>
+// ---------- vista de escritorio: mapa horizontal (mismo árbol de datos) ----------
+(function () {
+  const gr = document.getElementById('graph'), world = document.getElementById('gworld'), svg = document.getElementById('gsvg'), panel = document.getElementById('gpanel');
+  const NS = 'http://www.w3.org/2000/svg', GAP = 80, RH = 90;
+  const all = []; let sel = null, tourT = null, flowSet = new Set();
+  function prep(n, d, parent, col) {
+    n.d = d; n.par = parent; n.col = n.c || col; n.open = d === 0; all.push(n);
+    const div = document.createElement('div');
+    div.className = 'gn ' + (d === 0 ? 'l0' : d === 1 ? 'l1' : 'lx') + ' hid'; div.style.setProperty('--c', n.col);
+    const kids = n.k || [];
+    div.innerHTML = (n.ic ? '<div class="gi"><i class="fa-solid ' + n.ic + '"></i></div>' : '')
+      + '<div class="gt"><span class="gk">' + (d === 0 ? 'Fenómeno central' : 'VAR ' + n.id) + '</span>' + esc(n.t) + (n.l ? '<span class="gx"> ⇄</span>' : '') + '</div>'
+      + (kids.length ? '<span class="gc">' + kids.length + ' <i class="fa-solid fa-chevron-right"></i></span>' : '');
+    div.onclick = ev => { ev.stopPropagation(); select(n); if (kids.length) { n.open = !n.open; if (!n.open) closeAll(n); layout(true); } };
+    n.gel = div; world.appendChild(div);
+    kids.forEach(k => prep(k, d + 1, n, n.col));
+  }
+  function closeAll(n) { (n.k || []).forEach(k => { k.open = false; closeAll(k) }) }
+  prep(ROOT, 0, null, ROOT.c);
+  const H = n => n.d === 0 ? 84 : 72, W = n => n.d === 0 ? 262 : 250;
+  const T = {x: 0, y: 0, k: 1};
+  function apply() { const t = 'translate(' + T.x + 'px,' + T.y + 'px) scale(' + T.k + ')'; world.style.transform = t; svg.style.transform = t; svg.style.transformOrigin = '0 0' }
+  function visible(n) { for (let p = n.par; p; p = p.par) if (!p.open) return false; return true }
+  function layout(keep) {
+    let row = 0;
+    function lay(n) {
+      n.gx = n.d * (250 + GAP);
+      const kids = n.open ? (n.k || []) : [];
+      if (!kids.length) { n.gy = row * RH; row++ } else { kids.forEach(lay); n.gy = (kids[0].gy + kids[kids.length - 1].gy) / 2 }
+    }
+    lay(ROOT);
+    all.forEach(n => { n.gel.classList.toggle('hid', !visible(n)); n.gel.style.left = n.gx + 'px'; n.gel.style.top = (n.gy + 36 - H(n) / 2) + 'px' });
+    drawLinks();
+    if (!keep) fit();
+  }
+  function mk(tag, at) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); return e }
+  function drawLinks() {
+    svg.innerHTML = '';
+    all.forEach(n => {
+      if (!n.par || !visible(n)) return;
+      const p = n.par, x1 = p.gx + W(p), y1 = p.gy + 36, x2 = n.gx, y2 = n.gy + 36, dx = (x2 - x1) * .55;
+      svg.appendChild(mk('path', {d: 'M' + x1 + ',' + y1 + ' C' + (x1 + dx) + ',' + y1 + ' ' + (x2 - dx) + ',' + y2 + ' ' + x2 + ',' + y2, class: 'gl' + (flowSet.has(n.id) ? ' flow' : ''), stroke: n.col}));
+    });
+    all.forEach(n => {
+      if (!n.l || !visible(n)) return;
+      n.l.forEach(id => {
+        const t = byId[id]; if (!t || !visible(t)) return;
+        const x1 = n.gx + W(n), y1 = n.gy + 36, x2 = t.gx + W(t), y2 = t.gy + 36, bx = Math.max(x1, x2) + 70 + Math.abs(y2 - y1) * .12;
+        svg.appendChild(mk('path', {d: 'M' + x1 + ',' + y1 + ' C' + bx + ',' + y1 + ' ' + bx + ',' + y2 + ' ' + x2 + ',' + y2, class: 'gl x'}));
+      });
+    });
+  }
+  function fit() {
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    all.forEach(n => { if (!visible(n)) return; x0 = Math.min(x0, n.gx); x1 = Math.max(x1, n.gx + W(n)); y0 = Math.min(y0, n.gy - 6); y1 = Math.max(y1, n.gy + 78) });
+    const vw = innerWidth, vh = innerHeight - 70, w = x1 - x0, h = y1 - y0;
+    T.k = Math.min(1.1, Math.max(.3, Math.min((vw - 80) / w, (vh - 80) / h)));
+    T.x = (vw - w * T.k) / 2 - x0 * T.k; T.y = 70 + (vh - h * T.k) / 2 - y0 * T.k; apply();
+  }
+  function select(n) {
+    if (sel) sel.gel.classList.remove('sel'); sel = n; n.gel.classList.add('sel');
+    let h = '<h3>' + esc(n.t) + '</h3>' + (n.a ? '<div class="a">' + esc(n.a) + '</div>' : '') + (n.i ? '<div>' + esc(n.i) + '</div>' : '');
+    if (!n.i && !n.a) h += '<div class="a">VAR ' + n.id + '</div>';
+    panel.innerHTML = h; panel.classList.add('on');
+    (n.l || []).forEach(id => { const b = document.createElement('button'); b.className = 'lk'; b.textContent = '⇄ conecta con VAR ' + id; b.onclick = () => reveal(id); panel.appendChild(b) });
+  }
+  function reveal(id) {
+    const t = byId[id]; for (let p = t.par; p; p = p.par) p.open = true; layout(true); select(t);
+    T.x = innerWidth / 2 - (t.gx + 125) * T.k; T.y = innerHeight / 2 - (t.gy + 36) * T.k; apply();
+  }
+  document.getElementById('gq').addEventListener('input', e => {
+    const v = e.target.value.trim().toLowerCase();
+    all.forEach(n => n.gel.classList.remove('hit', 'dim'));
+    if (!v) return;
+    const hits = all.filter(n => (n.t + ' ' + (n.a || '') + ' ' + (n.i || '')).toLowerCase().indexOf(v) >= 0);
+    hits.forEach(n => { for (let p = n.par; p; p = p.par) p.open = true });
+    layout(true);
+    all.forEach(n => n.gel.classList.add(hits.indexOf(n) >= 0 ? 'hit' : 'dim'));
+  });
+  document.getElementById('gAll').onclick = () => { all.forEach(n => n.open = true); layout() };
+  function stopTour() { if (tourT) { clearInterval(tourT); tourT = null } document.getElementById('gPlay').innerHTML = '<i class="fa-solid fa-play"></i> Propagar' }
+  document.getElementById('gReset').onclick = () => { stopTour(); all.forEach(n => n.open = n.d === 0); flowSet = new Set(); sel = null; all.forEach(n => n.gel.classList.remove('sel', 'hit', 'dim')); panel.classList.remove('on'); document.getElementById('gq').value = ''; layout(); };
+  document.getElementById('gPlay').onclick = () => {
+    if (tourT) { stopTour(); return }
+    all.forEach(n => n.open = n.d === 0); flowSet = new Set(); layout();
+    document.getElementById('gPlay').innerHTML = '<i class="fa-solid fa-pause"></i> Detener';
+    let lvl = 0; const maxD = Math.max.apply(null, all.map(n => n.d));
+    const step = () => {
+      if (lvl > maxD) { stopTour(); return }
+      flowSet = new Set();
+      all.filter(n => n.d === lvl && (n.k || []).length).forEach(n => { n.open = true; n.k.forEach(k => flowSet.add(k.id)) });
+      layout(); lvl++;
+    };
+    step(); tourT = setInterval(step, 1800);
+  };
+  let drag = null;
+  gr.addEventListener('pointerdown', e => { if (e.target.closest('.gn,#gtop,#gpanel')) return; drag = {x: e.clientX - T.x, y: e.clientY - T.y}; gr.classList.add('drag'); gr.setPointerCapture(e.pointerId) });
+  gr.addEventListener('pointermove', e => { if (!drag) return; T.x = e.clientX - drag.x; T.y = e.clientY - drag.y; apply() });
+  gr.addEventListener('pointerup', () => { drag = null; gr.classList.remove('drag') });
+  gr.addEventListener('wheel', e => {
+    if (e.target.closest('#gpanel')) return; e.preventDefault();
+    const k = Math.min(2.2, Math.max(.25, T.k * (e.deltaY < 0 ? 1.1 : 1 / 1.1))), r = k / T.k;
+    T.x = e.clientX - (e.clientX - T.x) * r; T.y = e.clientY - (e.clientY - T.y) * r; T.k = k; apply();
+  }, {passive: false});
+  gr.addEventListener('click', e => { if (!e.target.closest('.gn,#gtop,#gpanel')) { if (sel) sel.gel.classList.remove('sel'); sel = null; panel.classList.remove('on') } });
+  addEventListener('resize', () => { if (innerWidth >= 900) fit() });
+  // arranque: el fenómeno central y sus primeras variables a la vista
+  ROOT.open = true; layout();
+})();
 </script>
 </body>
 </html>
