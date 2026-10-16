@@ -744,7 +744,7 @@ $('#bPlay').onclick = () => {
     let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
     net.vis.forEach(n => { const r = NR(n); x0 = Math.min(x0, n.nx - r - 60); x1 = Math.max(x1, n.nx + r + 60); y0 = Math.min(y0, n.ny - r - 10); y1 = Math.max(y1, n.ny + r + 56) });
     if (x1 < x0) return;
-    const vw = innerWidth, vh = innerHeight, tp = 70, bt = net.sel ? Math.min(190, vh * .34) : 70, w = x1 - x0, h = y1 - y0;
+    const vw = innerWidth, vh = innerHeight, tp = 70, bt = ninfo.classList.contains('show') ? Math.min(190, vh * .34) : 70, w = x1 - x0, h = y1 - y0;
     const k = Math.min(1.25, Math.max(.18, Math.min((vw - 24) / w, (vh - tp - bt) / h)));
     net.tg = {k, x: (vw - w * k) / 2 - x0 * k, y: tp + (vh - tp - bt - h * k) / 2 - y0 * k};
   }
@@ -759,6 +759,7 @@ $('#bPlay').onclick = () => {
     net.raf = requestAnimationFrame(step);
   }
   function netInfo(n) {
+    if (!n.i) { ninfo.classList.remove('show'); return } // solo las bolas con explicación del guion llevan tarjeta
     ninfo.style.setProperty('--c', n.col);
     const kc = (n.k || []).length, xc = (n.l || []).length;
     ninfo.innerHTML = '<div class="nik">' + (n.d === 0 ? 'Fenómeno central' : 'VAR ' + n.id) + '</div><h3>' + esc(n.t) + '</h3>' + (n.a ? '<div class="nia">' + esc(n.a) + '</div>' : '') + (n.i ? '<p>' + esc(n.i) + '</p>' : '')
