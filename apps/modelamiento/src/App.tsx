@@ -15,6 +15,10 @@ const N = BEATS.length;
 const DYN_ICONS: Record<string, LucideIcon> = { dyn1: Store, dyn2: Truck, dyn3: Users, dyn4: Droplets };
 const COMP_ICONS: LucideIcon[] = [ChartLine, Satellite, Share2];
 const cv = (c: string, ink = '#0a0a0a') => ({ '--c': c, '--ink': ink }) as React.CSSProperties;
+const stageSize = () => {
+  const s = document.getElementById('stage');
+  return { W: (s && s.clientWidth) || window.innerWidth, H: (s && s.clientHeight) || window.innerHeight };
+};
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ---------------------------------------------------------------- disposición por secuencia
@@ -26,7 +30,7 @@ function layout(b: number, m: boolean): Record<string, St> {
   const dim = b >= 9 ? 0.3 : 1;
   const hy = m ? 0.305 : 0.255;
   // título
-  L.title = b === 0 ? T(0.5, 0.5, 1, 1) : T(0.5, m ? 0.05 : 0.062, b >= 9 ? 0.35 : 1, m ? 0.5 : 0.3);
+  L.title = b === 0 ? T(0.5, 0.5, 1, 1) : T(0.5, m ? 0.055 : 0.07, b >= 9 ? 0.35 : 1, m ? 0.5 : 0.3);
   L.hint = b === 0 ? T(0.5, m ? 0.62 : 0.64, 0.9, 1, 1.4) : T(0.5, m ? 0.62 : 0.64, 0);
   // dos ejes
   L.ejes = b === 0 ? T(0.5, 0.5, 0, 0.94) : b === 1 ? T(0.5, m ? 0.27 : 0.31, 1, 1, 0.55) : T(0.5, m ? 0.125 : 0.172, b >= 9 ? 0.35 : 1, 1);
@@ -160,16 +164,35 @@ export default function App() {
     gsap.to(window, { scrollTo: { y: t * window.innerHeight, autoKill: false }, duration: reduced() ? 0 : 0.9, ease: 'power2.inOut' });
   }, []);
 
-  // ---------- tamaño
+  // ---------- tamaño: el escenario se reencuadra solo ante cualquier cambio de ventana, zoom o pantalla completa
   useEffect(() => {
-    const on = () => { setM(window.innerWidth < 768); api.current?.map.resize(); applyLayout(beatRef.current, true); };
-    window.addEventListener('resize', on);
-    return () => window.removeEventListener('resize', on);
+    let t = 0;
+    const refit = () => {
+      window.clearTimeout(t);
+      t = window.setTimeout(() => {
+        setM(window.innerWidth < 768);
+        api.current?.map.resize();
+        applyLayout(beatRef.current, true);
+        ScrollTrigger.refresh();
+      }, 60);
+    };
+    window.addEventListener('resize', refit);
+    window.addEventListener('orientationchange', refit);
+    window.visualViewport?.addEventListener('resize', refit);
+    const ro = new ResizeObserver(refit);
+    if (stageRef.current) ro.observe(stageRef.current);
+    const late = window.setTimeout(refit, 600);
+    window.addEventListener('load', refit);
+    return () => {
+      window.clearTimeout(t); window.clearTimeout(late); ro.disconnect();
+      window.removeEventListener('resize', refit); window.removeEventListener('orientationchange', refit);
+      window.visualViewport?.removeEventListener('resize', refit); window.removeEventListener('load', refit);
+    };
   }, []);
 
   // ---------- posiciones de los elementos
   const applyLayout = (b: number, instant = false) => {
-    const W = window.innerWidth, H = window.innerHeight, rm = reduced() || instant;
+    const { W, H } = stageSize(), rm = reduced() || instant;
     const L = layout(b, mRef.current);
     Object.entries(L).forEach(([id, s]) => {
       const el = els.current[id];
@@ -185,7 +208,7 @@ export default function App() {
   // ---------- estado inicial de los elementos
   useLayoutEffect(() => {
     const L = layout(0, mRef.current);
-    const W = window.innerWidth, H = window.innerHeight;
+    const { W, H } = stageSize();
     Object.entries(L).forEach(([id, s]) => {
       const el = els.current[id];
       if (el) gsap.set(el, { xPercent: -50, yPercent: -50, x: s.x * W, y: s.y * H, opacity: 0, scale: s.s });
@@ -280,17 +303,17 @@ export default function App() {
 
   // ---------- cámara y marcadores según la secuencia
   const camPad = () => {
-    const W = window.innerWidth;
+    const { W } = stageSize();
     return mRef.current ? { top: 40, bottom: 60, left: 24, right: 24 } : { top: 40, bottom: 70, left: Math.round(W * 0.06), right: Math.round(W * 0.06) };
   };
   const clusterPad = () => {
-    const W = window.innerWidth;
+    const { W } = stageSize();
     return mRef.current ? { top: 70, bottom: 70, left: 40, right: 40 } : { top: 70, bottom: 80, left: Math.round(W * 0.3), right: Math.round(W * 0.3) };
   };
   const setHl = (v: number, dur: number) => {
     const a = api.current; if (!a) return;
     gsap.to(a.hl, { v, duration: reduced() ? 0 : dur, ease: 'power2.out', onUpdate: () => {
-      a.map.setPaintProperty('kennedy-fill', 'fill-opacity', a.hl.v * 0.3);
+      a.map.setPaintProperty('kennedy-fill', 'fill-opacity', a.hl.v * (0.3 - 0.2 * a.three.k.v));
       a.map.setPaintProperty('kennedy-line', 'line-opacity', a.hl.v);
     } });
   };
@@ -310,12 +333,18 @@ export default function App() {
     m3.setPaintProperty('parques-fill', 'fill-opacity', 0.85 * f);
     m3.setPaintProperty('agua-fill', 'fill-opacity', 0.9 * f);
     m3.setPaintProperty('vias-line', 'line-opacity', 0.75 * f);
+    m3.setPaintProperty('kennedy-fill', 'fill-opacity', a.hl.v * (0.3 - 0.2 * k));
   };
   const to3D = (on: boolean, instant = false) => {
     const a = api.current; if (!a) return;
     a.three.on = on;
     if (!a.three.ready) return;
     gsap.to(a.three.k, { v: on ? 1 : 0, duration: reduced() || instant ? 0 : 2.4, ease: 'power2.inOut', overwrite: true, onUpdate: () => apply3D(), onComplete: () => apply3D(true) });
+  };
+  const flyCenter = (z: number, ms: number) => {
+    const a = api.current; if (!a) return;
+    const c: [number, number] = [(a.cluster[0] + a.cluster[2]) / 2, (a.cluster[1] + a.cluster[3]) / 2];
+    a.map.easeTo({ center: c, zoom: mRef.current ? z - 0.8 : z, pitch: mRef.current ? 46 : VIEW3D.pitch, bearing: VIEW3D.bearing, duration: reduced() ? 0 : ms, essential: true });
   };
   const clearTimers = () => { timers.current.forEach((t) => window.clearTimeout(t)); timers.current = []; };
   const later = (fn: () => void, ms: number) => { timers.current.push(window.setTimeout(fn, reduced() ? 0 : ms)); };
@@ -346,11 +375,11 @@ export default function App() {
         a.map.fitBounds([[a.bogota[0], a.bogota[1]], [a.bogota[2], a.bogota[3]]], { padding: camPad(), duration: 0 });
         showMk(['bogota']); setHl(0, 0.1);
         later(() => { setHl(1, 1.4); showMk(['kennedy', 'tintal', 'porvenir', 'patiob']); }, 2000);
-        later(() => fly(a.kennedy, camPad(), 3200, undefined, VIEW3D, 1.0), 3600);
+        later(() => flyCenter(13.1, 3200), 3600);
         later(() => to3D(true), 4800);
         later(() => showMk(['kennedy', 'tintal', 'porvenir', 'patiob', 'corabastos', 'burro']), 6600);
       } else {
-        setHl(1, 0.5); fly(a.kennedy, camPad(), 2200, undefined, VIEW3D, 1.0); to3D(true);
+        setHl(1, 0.5); flyCenter(13.1, 2200); to3D(true);
         showMk(['kennedy', 'tintal', 'porvenir', 'patiob', 'corabastos', 'burro']);
       }
     } else {
