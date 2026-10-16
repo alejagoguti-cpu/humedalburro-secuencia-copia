@@ -15,11 +15,11 @@ const N = BEATS.length;
 const DYN_ICONS: Record<string, LucideIcon> = { dyn1: Store, dyn2: Truck, dyn3: Users, dyn4: Droplets };
 const COMP_ICONS: LucideIcon[] = [ChartLine, Satellite, Share2];
 const cv = (c: string, ink = '#0a0a0a') => ({ '--c': c, '--ink': ink }) as React.CSSProperties;
-const stageSize = () => {
+export const stageSize = () => {
   const s = document.getElementById('stage');
   return { W: (s && s.clientWidth) || window.innerWidth, H: (s && s.clientHeight) || window.innerHeight };
 };
-const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+export const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ---------------------------------------------------------------- disposición por secuencia
 interface St { x: number; y: number; o: number; s: number; d: number }
@@ -88,7 +88,7 @@ const Qb = (a: Pt, b: Pt, bulge: number) => {
 
 // ---------------------------------------------------------------- mapa
 const MAP_STYLE_BG = COLORS.bg;
-const VIEW3D = { pitch: 52, bearing: -18 };
+export const VIEW3D = { pitch: 52, bearing: -18 };
 function decodeBuildings(rows: number[][]) {
   const features = rows.map((r) => {
     let x = r[1], y = r[2];
@@ -113,7 +113,7 @@ function decodeTrees(flat: number[]) {
   }
   return { type: 'FeatureCollection' as const, features };
 }
-async function load3D(map: maplibregl.Map, isDead: () => boolean) {
+export async function load3D(map: maplibregl.Map, isDead: () => boolean) {
   const j = (f: string) => fetch('./data/' + f).then((r) => r.json());
   const [b, p, w, v, tr] = await Promise.all([j('edificios.json'), j('parques.json'), j('agua.json'), j('vias.json'), j('arboles.json')]);
   if (isDead()) return false;
@@ -144,13 +144,13 @@ async function load3D(map: maplibregl.Map, isDead: () => boolean) {
   map.setLight({ anchor: 'viewport', color: '#ffffff', intensity: 0.5, position: [1.3, 210, 55] });
   return true;
 }
-function bboxOf(geom: any): [number, number, number, number] {
+export function bboxOf(geom: any): [number, number, number, number] {
   let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
   const walk = (c: any) => { if (typeof c[0] === 'number') { x0 = Math.min(x0, c[0]); x1 = Math.max(x1, c[0]); y0 = Math.min(y0, c[1]); y1 = Math.max(y1, c[1]); } else c.forEach(walk); };
   walk(geom.coordinates);
   return [x0, y0, x1, y1];
 }
-const unionBox = (bs: [number, number, number, number][]): [number, number, number, number] =>
+export const unionBox = (bs: [number, number, number, number][]): [number, number, number, number] =>
   [Math.min(...bs.map((b) => b[0])), Math.min(...bs.map((b) => b[1])), Math.max(...bs.map((b) => b[2])), Math.max(...bs.map((b) => b[3]))];
 
 interface MapApi {
@@ -595,7 +595,10 @@ export default function App() {
           )}
         </div>
         <div ref={reg('cta')} className="abs text-center" style={{ pointerEvents: 'none' }}>
-          <a className="btn-ghost pri" href="../pot-kennedy-mapa.html" style={{ pointerEvents: beat === 10 ? 'auto' : 'none' }}>Abrir la red interactiva →</a>
+          <div className="flex items-center justify-center gap-3" style={{ flexWrap: 'wrap' }}>
+            <a className="btn-ghost pri" href="./conclusion.html" style={{ pointerEvents: beat === 10 ? 'auto' : 'none' }}>Continuar a la conclusión →</a>
+            <a className="btn-ghost" href="../pot-kennedy-mapa.html" style={{ pointerEvents: beat === 10 ? 'auto' : 'none' }}>Abrir la red interactiva</a>
+          </div>
         </div>
 
         {/* navegación */}

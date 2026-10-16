@@ -1,0 +1,16 @@
+import * as shp from 'shapefile';
+import proj4 from 'proj4';
+import { readFileSync } from 'node:fs';
+const utm = '+proj=utm +zone=18 +datum=WGS84 +units=m +no_defs';
+const inv = (x, y) => proj4(utm, 'WGS84', [x + 586865, y + 509725]);
+const Q = 'C:/Users/aleja/Music/SEMESTRE 8/qgis/UPZ Corabastos (80)/UPZ';
+const fc = await shp.read(Q + '.shp', Q + '.dbf', { encoding: 'utf-8' });
+const ring = fc.features[0].geometry.coordinates[0].map(([x, y]) => proj4('EPSG:3857', 'WGS84', [x, y]));
+const inPoly = (p, x, y) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { if (((p[i][1] > y) !== (p[j][1] > y)) && (x < ((p[j][0] - p[i][0]) * (y - p[i][1])) / (p[j][1] - p[i][1]) + p[i][0])) c = !c; } return c; };
+console.log('UPZ Corabastos bbox lon/lat', Math.min(...ring.map((p) => p[0])).toFixed(4), Math.min(...ring.map((p) => p[1])).toFixed(4), Math.max(...ring.map((p) => p[0])).toFixed(4), Math.max(...ring.map((p) => p[1])).toFixed(4));
+const M = JSON.parse(readFileSync('../../assets/kennedy_manzanas.json', 'utf8'));
+const area = (p) => { let s = 0; for (let i = 0; i < p.length - 1; i++) s += p[i][0] * p[i + 1][1] - p[i + 1][0] * p[i][1]; return Math.abs(s) / 2; };
+const rows = M.map((m) => { const c = m.pts.reduce((s, p) => [s[0] + p[0] / m.pts.length, s[1] + p[1] / m.pts.length], [0, 0]); const [lon, lat] = inv(c[0], c[1]); return { code: m.codigo, ha: area(m.pts) / 1e4, lon, lat, inUPZ: inPoly(ring, lon, lat) }; });
+const top = rows.filter((r) => r.inUPZ).sort((a, b) => b.ha - a.ha).slice(0, 5);
+console.log('mayores manzanas dentro de la UPZ Corabastos:'); top.forEach((r) => console.log(' ', r.code, r.ha.toFixed(1) + ' ha', r.lat.toFixed(5), r.lon.toFixed(5)));
+console.log('Excel Corabastos 4.62647, -74.1583');

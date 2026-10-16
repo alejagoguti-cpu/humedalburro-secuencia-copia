@@ -7,5 +7,8 @@ export default defineConfig({
   base: './',
   optimizeDeps: { exclude: ['maplibre-gl'] },
   plugins: [react(), tailwindcss()],
-  build: { outDir: '../../modelamiento', emptyOutDir: true, chunkSizeWarningLimit: 1500 },
+  build: {
+    outDir: '../../modelamiento', emptyOutDir: true, chunkSizeWarningLimit: 1500,
+    rollupOptions: { input: { main: 'index.html', conclusion: 'conclusion.html' } },
+  },
 });
