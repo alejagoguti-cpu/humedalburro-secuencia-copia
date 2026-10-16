@@ -118,7 +118,7 @@ footer button:hover{background:#171717}
 .gnode.on:hover{transform:translateY(-3px) scale(1.025);transition-delay:0s}
 .gnode:hover{border-color:color-mix(in srgb,var(--c) 70%,#fff);box-shadow:0 8px 28px -10px var(--c)}
 .gnode.sel{border-color:#fff;box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 40%,transparent)}
-.gnode.dim{opacity:.16}.gnode.hit{box-shadow:0 0 0 3px #ffd54a}
+.gnode.on.dim{opacity:.16}.gnode.hit{box-shadow:0 0 0 3px #ffd54a}
 .gnode.ping{animation:gping .9s ease-out}@keyframes gping{0%{box-shadow:0 0 0 0 var(--c)}100%{box-shadow:0 0 0 18px transparent}}
 .gglare{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(170px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.16),transparent 62%);z-index:2}
 .gnode:hover .gglare{opacity:1}
@@ -418,8 +418,18 @@ $('#bPlay').onclick = () => {
     all.forEach(n => {
       const s = SZ(n), v = visible(n), wasV = n.vis; n.vis = v;
       n.gcx = n.gx + s.w / 2; n.gcy = n.gy; // centro
-      n.gel.style.left = n.gx + 'px'; n.gel.style.top = (n.gy - s.h / 2) + 'px';
-      if (n.par) { const ps = SZ(n.par); n.gel.style.setProperty('--dx', (n.par.gx + ps.w / 2 - n.gcx) + 'px'); n.gel.style.setProperty('--dy', (n.par.gy - n.gy) + 'px') }
+      const g = n.gel, lf = n.gx + 'px', tp = (n.gy - s.h / 2) + 'px';
+      if (v) {
+        if (!wasV) { // aparece: se coloca de golpe en su sitio y sale desde el padre
+          g.style.transition = 'none'; g.style.left = lf; g.style.top = tp;
+          if (n.par) { const ps = SZ(n.par); g.style.setProperty('--dx', (n.par.gx + ps.w / 2 - n.gcx) + 'px'); g.style.setProperty('--dy', (n.par.gy - n.gy) + 'px') }
+          void g.offsetWidth; g.style.transition = '';
+        } else { g.style.left = lf; g.style.top = tp }
+      } else { // se oculta: se desvanece en su lugar, sin viajar sobre otras tarjetas
+        g.style.setProperty('--dx', '0px'); g.style.setProperty('--dy', '0px');
+        if (!n.placed) { g.style.transition = 'none'; g.style.left = lf; g.style.top = tp; void g.offsetWidth; g.style.transition = '' }
+      }
+      n.placed = true;
       const dl = (!wasV && v ? (n.idx * 0.06 + 0.05) : 0) + 's';
       n.gel.style.setProperty('--dl', dl); if (n.lk) n.lk.g.style.setProperty('--dl', dl);
       n.gel.classList.toggle('on', v); n.gel.classList.toggle('open', n.open);
@@ -589,7 +599,7 @@ $('#bPlay').onclick = () => {
     let row = 0;
     (function L(n) { n.ix = n.d === 0 ? 0 : 310 + (n.d - 1) * 125; const k = n.k || []; if (!k.length) { n.iy = row * 27; row++ } else { k.forEach(L); n.iy = (k[0].iy + k[k.length - 1].iy) / 2 } })(ROOT);
     ROOT.gx = 0; ROOT.gy = ROOT.iy; ROOT.gel.style.left = '0px'; ROOT.gel.style.top = (ROOT.gy - 85) + 'px';
-    all.forEach(n => { n.open = false; n.vis = n === ROOT; n.gel.classList.toggle('on', n === ROOT); n.gel.classList.remove('open', 'sel', 'dim'); if (n.par) { n.gx = n.par.gx; n.gy = n.par.gy; n.gel.style.left = n.gx + 'px'; n.gel.style.top = (n.gy - SZ(n).h / 2) + 'px' } });
+    all.forEach(n => { n.open = false; n.vis = n === ROOT; n.gel.classList.toggle('on', n === ROOT); n.gel.classList.remove('open', 'sel', 'dim'); if (n.par) { n.gx = n.par.gx; n.gy = n.par.gy } });
     ROOT.gel.classList.add('intro');
     const G = mk('g', {id: 'gintro'});
     all.forEach(n => { if (!n.par) return; const p = n.par, x1 = p.d === 0 ? p.ix + 250 : p.ix, y1 = p.iy; G.appendChild(mk('path', {d: 'M' + x1 + ',' + y1 + ' L' + n.ix + ',' + n.iy, stroke: n.col, 'stroke-width': 1, fill: 'none', opacity: .45})) });
