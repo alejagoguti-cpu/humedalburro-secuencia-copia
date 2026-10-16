@@ -258,7 +258,7 @@ const focus=()=>hover>=0?hover:sel;
 function draw(now){
  step();
  const t=(now-T0)/1000,f=focus();
- for(let i=0;i<N;i++){const p=P[i],d=D[i];d.x=p.x+Math.sin(t*.7+i*1.7)*3.4;d.y=p.y+Math.cos(t*.58+i*2.3)*3.4;els[i].style.transform=`translate(${d.x}px,${d.y}px)`;els[i].style.setProperty('--r',p.r.toFixed(1));els[i].style.setProperty('--f',Math.max(11,Math.min(16,(p.r-7)/TX[i].rEm)).toFixed(2))}
+ for(let i=0;i<N;i++){const p=P[i],d=D[i];d.x=p.x+Math.sin(t*.7+i*1.7)*3.4;d.y=p.y+Math.cos(t*.58+i*2.3)*3.4;d.r=p.r;els[i].style.transform=`translate(${d.x}px,${d.y}px)`;els[i].style.setProperty('--r',p.r.toFixed(1));els[i].style.setProperty('--f',Math.max(11,Math.min(16,(p.r-7)/TX[i].rEm)).toFixed(2))}
  edges.forEach((e,k)=>{const o=E[k],on=edgeOn(k);o.g+=((on?1:0)-o.g)*.09;if(Math.abs((on?1:0)-o.g)<.01)o.g=on?1:0;
   const a=D[e.s],b=D[e.t],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d,x1=a.x+ux*(a.r+3),y1=a.y+uy*(a.r+3),x2=b.x-ux*(b.r+5),y2=b.y-uy*(b.r+5),ex=x1+(x2-x1)*o.g,ey=y1+(y2-y1)*o.g;
   const touch=(f>=0&&(e.s===f||e.t===f))||k===selEdge,dim=(f>=0&&!touch&&k!==selEdge)||(hlType>=0&&e.type!==hlType)||(hlCat>=0&&nodes[e.s].cat!==hlCat&&nodes[e.t].cat!==hlCat);
