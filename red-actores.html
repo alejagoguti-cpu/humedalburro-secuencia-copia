@@ -4412,6 +4412,7 @@ window.onerror = function(msg, url, line, col, error) {
       baseToast.style.display = 'block'; baseToast.textContent = 'Cargando la base 3D de Kennedy…';
       B.load(sceneRoot, renderer, (p, done) => {
         baseToast.textContent = done ? 'Base 3D lista' : 'Cargando la base 3D de Kennedy… ' + Math.round(p * 100) + '%';
+        window.__baseP = p; try { window.parent.postMessage({ type: 'territorio-progreso', p: p, done: !!done }, '*'); } catch (e) {}
         if (done) { setTimeout(() => { baseToast.style.display = 'none'; }, 1200); updateStageVisibility(); }
       });
     }
@@ -4681,8 +4682,14 @@ window.onerror = function(msg, url, line, col, error) {
       if (window.gsap) gsap.to(camera.position, { x: territoryCamPos.x, y: territoryCamPos.y, z: territoryCamPos.z, duration: 2.6, ease: 'power2.out' });
       else camera.position.copy(territoryCamPos);
     };
-    const poll = setInterval(() => { const B = window.Base3D; if (B && B.state.status === 'ready') { clearInterval(poll); setTimeout(reveal, 400); } }, 250);
-    setTimeout(() => { clearInterval(poll); reveal(); }, 30000);
+    // la base 3D arranca al "entrar" al territorio: se reintenta hasta que el script esté cargado y haya empezado
+    const poll = setInterval(() => {
+      const B = window.Base3D;
+      if (!B) return;
+      if (B.state.status === 'idle') { try { updateStageVisibility(); } catch (e) {} }
+      if (B.state.status === 'ready' || (window.__baseP || 0) >= 0.62) { clearInterval(poll); setTimeout(reveal, 400); }
+    }, 250);
+    setTimeout(() => { clearInterval(poll); reveal(); }, 60000);
   })();
 
   // Resize Handler

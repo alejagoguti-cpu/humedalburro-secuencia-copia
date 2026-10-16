@@ -132,6 +132,7 @@ svg#edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 #drawer .kpi{display:flex;gap:18px;margin-top:10px}#drawer .kpi div{font-size:11px;color:var(--mut)}#drawer .kpi b{display:block;font-size:18px;color:var(--txt);font-weight:650}
 #terr{position:absolute;inset:0;z-index:20;background:#000;display:none}
 #terrLoad{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--mut);font-size:12.5px;z-index:1;transition:opacity .5s}#terrLoad b{color:var(--txt);font-size:14px}
+#terrLoad .bar{width:240px;height:4px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:6px}#terrLoad .bar i{display:block;height:100%;width:3%;background:var(--acc);border-radius:99px;transition:width .4s}#terrLoad small{font-size:11px;opacity:.7;max-width:300px;text-align:center;line-height:1.4;margin-top:4px}
 #terrLoad .spin{width:30px;height:30px;border-radius:50%;border:3px solid rgba(255,255,255,.12);border-top-color:var(--acc);animation:spin 1s linear infinite;margin-bottom:6px}
 #terr.ready #terrLoad{opacity:0;pointer-events:none}#terr iframe{opacity:0;transition:opacity .9s}#terr.ready iframe{opacity:1}#terr.on{display:block}#terr iframe{width:100%;height:100%;border:0}#terrClose{position:absolute;left:20px;bottom:20px;z-index:21}
 @media(min-width:861px){body.dr #drawer{bottom:18px}body.dr #dock{left:20px;transform:none;width:calc(100vw - 440px)}body.dr #offrow{left:20px;transform:none}}
@@ -163,7 +164,7 @@ svg#edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
  </div>
 </div>
 <div id="pop" class="glass"></div>
-<div id="terr"><div id="terrLoad"><div class="spin"></div><b>Preparando el territorio</b><span>Cargando la base 3D de Kennedy…</span></div><iframe id="terrFrame" title="Territorio de Kennedy"></iframe><button class="btn pri" id="terrClose"><i class="fa-solid fa-diagram-project"></i> Volver a la red</button></div>
+<div id="terr"><div id="terrLoad"><div class="spin"></div><b>Preparando el territorio</b><span id="terrMsg">Cargando la base 3D de Kennedy…</span><div class="bar"><i id="terrBar"></i></div><small>Son varios MB de calles, manzanas y edificios; solo se descargan la primera vez.</small></div><iframe id="terrFrame" title="Territorio de Kennedy"></iframe><button class="btn pri" id="terrClose"><i class="fa-solid fa-diagram-project"></i> Volver a la red</button></div>
 <script>
 /*DATA*/
 (()=>{
@@ -369,8 +370,8 @@ const setMode=v=>{reveal=v;$('#bMode').classList.toggle('on',v)};
 $('#bMode').onclick=()=>{setMode(!reveal);if(reveal){const keep=sel>=0?sel:deg.indexOf(Math.max(...deg));for(let i=0;i<N;i++){if(i!==keep)off.add(i);else off.delete(i)}changed();pick(keep)}else{off.clear();changed()}};
 $('#bAll').onclick=()=>{off.clear();hiddenCat.clear();hiddenT.clear();setMode(false);closeDrawer();changed()};
 $('#bFit').onclick=()=>{autofit=true};
-addEventListener('message',ev=>{if(ev.data&&ev.data.type==='territorio-listo')$('#terr').classList.add('ready')});
-$('#bMat').onclick=()=>{$('#terr').classList.remove('ready');const ids=nodes.map((n,i)=>i).filter(isOn).map(i=>nodes[i].id);$('#terrFrame').src='red-actores.html?ids='+encodeURIComponent(ids.join(','));$('#terr').classList.add('on')};
+addEventListener('message',ev=>{const d=ev.data;if(!d)return;if(d.type==='territorio-listo')$('#terr').classList.add('ready');if(d.type==='territorio-progreso'){const p=Math.round(d.p*100);$('#terrBar').style.width=Math.max(4,p)+'%';$('#terrMsg').textContent='Cargando la base 3D de Kennedy… '+p+'%'}});
+$('#bMat').onclick=()=>{$('#terr').classList.remove('ready');$('#terrBar').style.width='3%';$('#terrMsg').textContent='Cargando la base 3D de Kennedy…';const ids=nodes.map((n,i)=>i).filter(isOn).map(i=>nodes[i].id);$('#terrFrame').src='red-actores.html?ids='+encodeURIComponent(ids.join(','));$('#terr').classList.add('on')};
 $('#terrClose').onclick=()=>{$('#terr').classList.remove('on','ready');$('#terrFrame').removeAttribute('src')};
 addEventListener('resize',()=>{window.__dockH=$('#dock').offsetHeight;document.documentElement.style.setProperty('--dockh',window.__dockH+'px')});
 // ---- arranque: red completa, sin nodo central
