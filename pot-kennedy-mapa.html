@@ -277,6 +277,7 @@ footer .fnet{flex:1}
 <div id="net">
  <div id="nbar">
   <div id="nbrand"><div class="logo"><i class="fa-solid fa-circle-nodes"></i></div><div><h1>El POT en Kennedy</h1><p>Red causal · sin jerarquía</p></div></div>
+  <button class="gb2" id="nBack" title="Atrás"><i class="fa-solid fa-arrow-left"></i><span> Atrás</span></button>
   <button class="gb2" id="nReset" title="Reiniciar red"><i class="fa-solid fa-rotate-left"></i><span> Reiniciar</span></button>
   <button class="gb2 pri" id="nClose" title="Volver al árbol"><i class="fa-solid fa-sitemap"></i><span> Árbol</span></button>
  </div>
@@ -664,7 +665,7 @@ $('#bPlay').onclick = () => {
   }
 
   // ---- red no jerárquica (vista final): bolas sueltas con fuerzas.
-  // Cada clic suma el nivel siguiente y retira el anterior: blanco (centro) → colores (ramas) → borde de color (variables)
+  // Cada clic muestra solo lo que contiene la bola tocada y la retira junto con su nivel (Atrás deshace): blanco (centro) → colores (ramas) → borde de color (variables)
   const nv = document.getElementById('net'), nw = document.getElementById('nworld'), nsvg = document.getElementById('nsvg'), ninfo = document.getElementById('ninfo'), nhint = document.getElementById('nhint');
   const net = {exp: new Set(), vis: [], T: {x: 0, y: 0, k: 1}, tg: {x: 0, y: 0, k: 1}, auto: true, moving: false, alpha: 0, raf: 0, sel: null, built: false, links: []};
   const NR = n => n.d === 0 ? 64 : n.d === 1 ? 42 : 25;
@@ -690,7 +691,7 @@ $('#bPlay').onclick = () => {
   }
   function netPlace(n) { n.nel.style.transform = 'translate(' + n.nx.toFixed(1) + 'px,' + n.ny.toFixed(1) + 'px)' }
   function netUpdate() {
-    let md = 0; net.exp.forEach(n => { if (n.d > md) md = n.d });
+    let md = 0; net.exp.forEach(n => { if (n.d + 1 > md) md = n.d + 1 });
     const now = all.filter(n => n.d >= md && (n.d === 0 || net.exp.has(n.par))), set = new Set(now);
     let cx = 0, cy = 0; net.vis.forEach(n => { cx += n.nx; cy += n.ny }); if (net.vis.length) { cx /= net.vis.length; cy /= net.vis.length }
     const groups = new Map();
@@ -765,7 +766,7 @@ $('#bPlay').onclick = () => {
   function netOpen() { if (!net.built) { netBuild(); netColors() } else netColors(); nv.classList.add('on'); netReset() }
   function netClose() { nv.classList.remove('on'); cancelAnimationFrame(net.raf); net.raf = 0 }
   document.getElementById('gNet').onclick = netOpen; document.getElementById('bNet').onclick = netOpen;
-  document.getElementById('nReset').onclick = netReset; document.getElementById('nClose').onclick = netClose;
+  document.getElementById('nReset').onclick = netReset; document.getElementById('nBack').onclick = () => { const a = [...net.exp]; if (!a.length) return; net.exp.delete(a[a.length - 1]); net.sel = null; ninfo.classList.remove('show'); netUpdate() }; document.getElementById('nClose').onclick = netClose;
   addEventListener('keydown', e => { if (e.key === 'Escape' && nv.classList.contains('on')) netClose() });
   addEventListener('resize', () => { if (nv.classList.contains('on')) { net.auto = true; netLoop() } });
   // arrastrar, pellizcar y rueda
