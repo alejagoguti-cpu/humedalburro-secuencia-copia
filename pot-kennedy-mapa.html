@@ -211,7 +211,9 @@ footer button:hover{background:#171717}
 #nbrand p{font:400 10px var(--mono);letter-spacing:1.5px;color:var(--mut);margin-top:3px;text-transform:uppercase;white-space:nowrap}
 .nlk{fill:none;stroke-width:1.8;stroke-linecap:round;opacity:.5;transition:opacity .4s}
 .nlk.x{stroke-dasharray:6 6;opacity:.55;animation:gxflow 1.4s linear infinite}
+.nlk.s{opacity:.3;stroke-width:1.3}
 .nlk.hide{opacity:0}
+.nn.ghost .nc{opacity:.4;filter:saturate(.7)}.nn.ghost .nl{opacity:.55}.nn.ghost .nk{display:none}
 .nn{position:absolute;left:0;top:0;will-change:transform}
 .nc{position:absolute;border-radius:50%;display:grid;place-items:center;cursor:pointer;background:var(--c);color:var(--ink);transition:transform .5s cubic-bezier(.2,.9,.3,1.25),opacity .35s,box-shadow .2s}
 .nn.d0 .nc{box-shadow:0 0 44px 4px color-mix(in srgb,var(--c) 45%,transparent)}
@@ -680,8 +682,10 @@ $('#bPlay').onclick = () => {
       e.addEventListener('click', ev => { ev.stopPropagation(); netClick(n) });
       n.nel = e; n.nx = 0; n.ny = 0; n.nvx = 0; n.nvy = 0; n.nv = false; nw.appendChild(e);
     });
-    all.forEach(n => { if (n.par) net.links.push({a: n.par, b: n, x: false}); (n.l || []).forEach(id => net.links.push({a: n, b: byId[id], x: true})) });
-    net.links.forEach(l => { l.el = mk('line', {class: 'nlk' + (l.x ? ' x' : '') + ' hide'}); nsvg.insertBefore(l.el, nsvg.firstChild) });
+    all.forEach(n => { if (n.par) net.links.push({a: n.par, b: n, x: false}); (n.l || []).forEach(id => net.links.push({a: n, b: byId[id], x: true}));
+      const k = n.k || []; if (k.length > 1) k.forEach((c, i) => { if (k.length > 2 || i === 0) net.links.push({a: c, b: k[(i + 1) % k.length], x: false, s: true}) }); // hermanas unidas entre sí: nada queda suelto
+    });
+    net.links.forEach(l => { l.el = mk('line', {class: 'nlk' + (l.x ? ' x' : '') + (l.s ? ' s' : '') + ' hide'}); nsvg.insertBefore(l.el, nsvg.firstChild) });
   }
   function netColors() {
     if (!net.built) return;
@@ -693,6 +697,8 @@ $('#bPlay').onclick = () => {
   function netUpdate() {
     let md = 0; net.exp.forEach(n => { if (n.d + 1 > md) md = n.d + 1 });
     const now = all.filter(n => n.d >= md && (n.d === 0 || net.exp.has(n.par))), set = new Set(now);
+    const ghosts = new Set(); // extremos de enlaces ⇄ que quedaron fuera: se ven atenuados para que la conexión no quede colgando
+    net.links.forEach(l => { if (!l.x) return; const A = set.has(l.a), B = set.has(l.b); if (A && !B) ghosts.add(l.b); else if (B && !A) ghosts.add(l.a) });
     let cx = 0, cy = 0; net.vis.forEach(n => { cx += n.nx; cy += n.ny }); if (net.vis.length) { cx /= net.vis.length; cy /= net.vis.length }
     const groups = new Map();
     now.filter(n => !n.nv).forEach(n => { const p = n.par && n.par.nv ? n.par : null; if (!groups.has(p)) groups.set(p, []); groups.get(p).push(n) });
@@ -707,12 +713,18 @@ $('#bPlay').onclick = () => {
         k.nvx = 0; k.nvy = 0; netPlace(k);
       });
     });
-    all.forEach(n => { const v = set.has(n); n.nv = v; n.nel.classList.toggle('off', !v); n.nel.classList.toggle('open', net.exp.has(n)); n.nel.classList.toggle('sel', n === net.sel) });
-    net.vis = now; net.auto = true; net.alpha = 1;
+    ghosts.forEach(g => {
+      if (g.nv) return; const q = net.links.find(l => l.x && ((l.a === g && set.has(l.b)) || (l.b === g && set.has(l.a)))), p = q ? (q.a === g ? q.b : q.a) : null, a = Math.random() * 6.283;
+      const out = p && Math.hypot(p.nx - cx, p.ny - cy) > 1 ? Math.atan2(p.ny - cy, p.nx - cx) + (Math.random() - .5) : a, dist = p ? NR(p) + NR(g) + 260 : 200;
+      g.nx = (p ? p.nx : cx) + Math.cos(out) * dist; g.ny = (p ? p.ny : cy) + Math.sin(out) * dist; g.nvx = 0; g.nvy = 0; netPlace(g);
+    });
+    const shown = now.concat([...ghosts]), sset = new Set(shown);
+    all.forEach(n => { const v = sset.has(n); n.nv = v; n.ng = ghosts.has(n); n.nel.classList.toggle('ghost', n.ng); n.nel.classList.toggle('off', !v); n.nel.classList.toggle('open', net.exp.has(n)); n.nel.classList.toggle('sel', n === net.sel) });
+    net.vis = shown; net.auto = true; net.alpha = 1;
     nhint.classList.toggle('hide', net.exp.size > 0);
     netLinks(); netLoop();
   }
-  function netLinks() { net.links.forEach(l => { l.el.classList.toggle('hide', !(l.a.nv && l.b.nv)); l.el.setAttribute('x1', l.a.nx); l.el.setAttribute('y1', l.a.ny); l.el.setAttribute('x2', l.b.nx); l.el.setAttribute('y2', l.b.ny) }) }
+  function netLinks() { net.links.forEach(l => { l.el.classList.toggle('hide', !(l.a.nv && l.b.nv) || (l.s && (l.a.ng || l.b.ng))); l.el.setAttribute('x1', l.a.nx); l.el.setAttribute('y1', l.a.ny); l.el.setAttribute('x2', l.b.nx); l.el.setAttribute('y2', l.b.ny) }) }
   function netTick() {
     const V = net.vis, a = net.alpha; if (a <= .02) return;
     for (let i = 0; i < V.length; i++) for (let j = i + 1; j < V.length; j++) {
@@ -755,7 +767,8 @@ $('#bPlay').onclick = () => {
   }
   function netClick(n) {
     net.sel = n; netInfo(n);
-    if ((n.k || []).length) { if (net.exp.has(n)) (function c(x) { net.exp.delete(x); (x.k || []).forEach(c) })(n); else net.exp.add(n) }
+    if (n.ng) { const ch = []; for (let p = n.par; p; p = p.par) ch.unshift(p); net.exp.clear(); ch.forEach(p => net.exp.add(p)) } // bola atenuada: lleva hasta ella
+    else if ((n.k || []).length) { if (net.exp.has(n)) (function c(x) { net.exp.delete(x); (x.k || []).forEach(c) })(n); else net.exp.add(n) }
     netUpdate();
   }
   function netReset() {
