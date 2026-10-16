@@ -1,52 +1,72 @@
-// Optimiza posiciones de la red plana (mínimos cruces) y las guarda en datos/layout-plana.json
+// Calcula el diseño "ancla" de la red plana: posiciones sin cruces de flechas ni flechas sobre actores,
+// usando los radios reales (texto completo + grado). Resultado: datos/layout-plana.json
+// Uso: node tools/optimizar-layout-plana.js <minutos> [semilla]
 const fs = require('fs'), path = require('path');
-const ROOT = process.argv[2], MIN = +(process.argv[3] || 5);
+const ROOT = path.join(__dirname, '..');
+const MIN = +(process.argv[2] || 5);
+let seed = +(process.argv[3] || 1);
+const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
 const html = fs.readFileSync(path.join(ROOT, 'red-actores-plana.html'), 'utf8');
 const D = JSON.parse(html.match(/const DATA=(.*?);\n/)[1]);
-const { nodes, edges } = D;
-const wrap = s => { if (s.length <= 20) return [s]; const w = s.split(' '); let best = 0, bd = 1e9; for (let i = 1; i < w.length; i++) { const a = w.slice(0, i).join(' ').length, b = w.slice(i).join(' ').length, d = Math.abs(a - b); if (d < bd) { bd = d; best = i } } return best ? [w.slice(0, best).join(' '), w.slice(best).join(' ')] : [s] };
-const W = nodes.map(n => Math.max(70, Math.max(...wrap(n.short).map(s => s.length)) * 6.4 + 10)), H = 104, UP = 34, DN = 70;
-let seed = +(process.argv[4] || 1); const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
-const N = nodes.length, MX = 2300, MY = 1500, CX = 1000, CN = 1000, CO = 800;
-const P = nodes.map(() => ({ x: 60 + rnd() * MX, y: 60 + rnd() * MY }));
+const { nodes, edges } = D, N = nodes.length;
+// ---- mismas reglas de texto que la página (sin expresiones regulares)
+function labelOf(n) {
+  let out = '', depth = 0, buf = '', longP = '';
+  for (const ch of n.name) {
+    if (ch === '(') { depth++; buf = ''; continue }
+    if (ch === ')' && depth > 0) { depth--; if (depth === 0) { if (buf.length <= 7 && buf.indexOf('/') < 0) out += ' (' + buf + ')'; else if (!longP) longP = buf } continue }
+    if (depth > 0) buf += ch; else out += ch
+  }
+  out = out.split(' ').filter(Boolean).join(' ');
+  if (out.startsWith('Flora Nativa Hub: ')) out = 'Flora: ' + out.slice(18);
+  if (out.length <= 7 && longP) out = out + ' · ' + longP;
+  return out;
+}
+function wrapLines(s) {
+  const w = s.split(' '); const target = s.length <= 14 ? 1 : Math.ceil(s.length / 13); let W = Math.max(...w.map(x => x.length));
+  for (; ; W++) { const L = []; let cur = ''; w.forEach(x => { if (!cur) cur = x; else if ((cur + ' ' + x).length <= W) cur += ' ' + x; else { L.push(cur); cur = x } }); L.push(cur); if (L.length <= target || W > 60) return L }
+}
+const deg = new Array(N).fill(0); edges.forEach(e => { deg[e.s]++; deg[e.t]++ });
+const R = nodes.map((n, i) => { const lines = wrapLines(labelOf(n)); const mc = Math.max(...lines.map(l => l.length)); const wE = mc * .56, hE = lines.length * 1.17 + 1.1; const rEm = Math.sqrt((wE / 2) ** 2 + (hE / 2) ** 2); return Math.max(Math.min(80, 36 + 7 * Math.sqrt(deg[i])), 11 * rEm + 7) });
+const MX = 2600, MY = 1500;
+const P = nodes.map(() => ({ x: 100 + rnd() * MX, y: 100 + rnd() * MY }));
 const inc = nodes.map(() => []); edges.forEach((e, k) => { inc[e.s].push(k); inc[e.t].push(k) });
 const ccw = (a, b, c) => (c.y - a.y) * (b.x - a.x) - (b.y - a.y) * (c.x - a.x);
 const segX = (a, b, c, d) => ccw(a, b, c) * ccw(a, b, d) < 0 && ccw(c, d, a) * ccw(c, d, b) < 0;
-const rectOf = (k, m) => ({ x0: P[k].x - W[k] / 2 - m, x1: P[k].x + W[k] / 2 + m, y0: P[k].y - UP - m, y1: P[k].y + DN + m });
-function segRect(a, b, r) {
-  if (Math.max(a.x, b.x) < r.x0 || Math.min(a.x, b.x) > r.x1 || Math.max(a.y, b.y) < r.y0 || Math.min(a.y, b.y) > r.y1) return false;
-  let t0 = 0, t1 = 1; const dx = b.x - a.x, dy = b.y - a.y;
-  for (const [p, q] of [[-dx, a.x - r.x0], [dx, r.x1 - a.x], [-dy, a.y - r.y0], [dy, r.y1 - a.y]]) { if (p === 0) { if (q < 0) return false } else { const u = q / p; if (p < 0) { if (u > t1) return false; if (u > t0) t0 = u } else { if (u < t0) return false; if (u < t1) t1 = u } } }
-  return t0 <= t1
-}
+function distSeg(p, a, b) { const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy || 1; let u = ((p.x - a.x) * dx + (p.y - a.y) * dy) / l; u = Math.max(0, Math.min(1, u)); return Math.hypot(p.x - a.x - u * dx, p.y - a.y - u * dy) }
 function local(i) {
   let c = 0;
   for (const k of inc[i]) {
     const e = edges[k];
-    for (let m = 0; m < edges.length; m++) { if (m === k) continue; const f = edges[m]; if (f.s === e.s || f.s === e.t || f.t === e.s || f.t === e.t) continue; if (segX(P[e.s], P[e.t], P[f.s], P[f.t])) c += CX }
-    for (let n = 0; n < N; n++) { if (n === e.s || n === e.t) continue; if (segRect(P[e.s], P[e.t], rectOf(n, 14))) c += CN }
-    c += Math.hypot(P[e.s].x - P[e.t].x, P[e.s].y - P[e.t].y) * .01
+    for (let m = 0; m < edges.length; m++) { if (m === k) continue; const f = edges[m]; if (f.s === e.s || f.s === e.t || f.t === e.s || f.t === e.t) continue; if (segX(P[e.s], P[e.t], P[f.s], P[f.t])) c += 1000 }
+    for (let n = 0; n < N; n++) { if (n === e.s || n === e.t) continue; if (distSeg(P[n], P[e.s], P[e.t]) < R[n] + 14) c += 1000 }
+    c += Math.hypot(P[e.s].x - P[e.t].x, P[e.s].y - P[e.t].y) * .02;
   }
-  const r = rectOf(i, 14); for (let m = 0; m < edges.length; m++) { const f = edges[m]; if (f.s === i || f.t === i) continue; if (segRect(P[f.s], P[f.t], r)) c += CN }
-  for (let n = 0; n < N; n++) { if (n === i) continue; const ox = (W[i] + W[n]) / 2 + 30 - Math.abs(P[i].x - P[n].x), oy = H + 16 - Math.abs(P[i].y - P[n].y); if (ox > 0 && oy > 0) c += CO }
-  return c
+  for (let m = 0; m < edges.length; m++) { const f = edges[m]; if (f.s === i || f.t === i) continue; if (distSeg(P[i], P[f.s], P[f.t]) < R[i] + 14) c += 1000 }
+  for (let n = 0; n < N; n++) { if (n === i) continue; if (Math.hypot(P[i].x - P[n].x, P[i].y - P[n].y) < R[i] + R[n] + 24) c += 800 }
+  return c;
 }
 const total = () => { let c = 0; for (let i = 0; i < N; i++) c += local(i); return c };
-const crossings = () => { let cr = 0; for (let a = 0; a < edges.length; a++)for (let b = a + 1; b < edges.length; b++) { const e = edges[a], f = edges[b]; if (e.s === f.s || e.s === f.t || e.t === f.s || e.t === f.t) continue; if (segX(P[e.s], P[e.t], P[f.s], P[f.t])) cr++ } return cr };
+function crossings() { let cr = 0; for (let a = 0; a < edges.length; a++)for (let b = a + 1; b < edges.length; b++) { const e = edges[a], f = edges[b]; if (e.s === f.s || e.s === f.t || e.t === f.s || e.t === f.t) continue; if (segX(P[e.s], P[e.t], P[f.s], P[f.t])) cr++ } return cr }
+function hits() { let h = 0; edges.forEach(e => { for (let n = 0; n < N; n++) { if (n !== e.s && n !== e.t && distSeg(P[n], P[e.s], P[e.t]) < R[n] + 14) h++ } }); return h }
 function anneal(iters) {
   for (let it = 0; it < iters; it++) {
-    const f = 1 - it / iters, i = (rnd() * N) | 0, ox = P[i].x, oy = P[i].y, before = local(i), step = 20 + 300 * f;
-    if (rnd() < .04) { P[i].x = 60 + rnd() * MX; P[i].y = 60 + rnd() * MY } else { P[i].x = Math.min(MX, Math.max(60, ox + (rnd() - .5) * 2 * step)); P[i].y = Math.min(MY, Math.max(60, oy + (rnd() - .5) * 2 * step)) }
-    const d = local(i) - before; if (d > 0 && rnd() > Math.exp(-d / Math.max(.3, f * 500))) { P[i].x = ox; P[i].y = oy }
+    const f = 1 - it / iters, i = (rnd() * N) | 0, ox = P[i].x, oy = P[i].y, before = local(i), step = 20 + 320 * f;
+    if (rnd() < .03) { P[i].x = 60 + rnd() * MX; P[i].y = 60 + rnd() * MY } else { P[i].x = Math.min(MX, Math.max(60, ox + (rnd() - .5) * 2 * step)); P[i].y = Math.min(MY, Math.max(60, oy + (rnd() - .5) * 2 * step)) }
+    const d = local(i) - before; if (d > 0 && rnd() > Math.exp(-d / Math.max(.3, f * f * 600))) { P[i].x = ox; P[i].y = oy }
   }
 }
-let best = null, bc = 1e18, bcr = 99, t0 = Date.now();
-const LF = path.join(ROOT, 'datos', 'layout-plana.json'); if (fs.existsSync(LF)) { const L = JSON.parse(fs.readFileSync(LF, 'utf8')); L.forEach((q, i) => { P[i].x = q.x; P[i].y = q.y }); bc = total(); bcr = crossings(); best = L; console.log('base: cruces', bcr, 'costo', Math.round(bc)); }
+const OUT = path.join(ROOT, 'datos', 'layout-plana.json');
+let best = null, bc = 1e18, bcr = 99, bh = 99, t0 = Date.now();
 while (Date.now() - t0 < MIN * 60000) {
-  P.forEach(p => { p.x = 60 + rnd() * MX; p.y = 60 + rnd() * MY });
-  anneal(300000);
-  const c = total(), cr = crossings();
-  if (cr < bcr || (cr === bcr && c < bc)) { bc = c; bcr = cr; best = P.map(p => ({ x: +p.x.toFixed(1), y: +p.y.toFixed(1) })); fs.writeFileSync(path.join(ROOT, 'datos', 'layout-plana.json'), JSON.stringify(best)); console.log('mejor: cruces', cr, 'costo', Math.round(c), 't=', Math.round((Date.now() - t0) / 1000) + 's') }
-  if (cr === 0 && c < 6000) break;
+  P.forEach(p => { p.x = 100 + rnd() * MX; p.y = 100 + rnd() * MY });
+  anneal(350000);
+  const c = total(), cr = crossings(), h = hits();
+  if (cr + h < bcr + bh || (cr + h === bcr + bh && c < bc)) {
+    bc = c; bcr = cr; bh = h; best = P.map(p => ({ x: +p.x.toFixed(1), y: +p.y.toFixed(1) }));
+    fs.writeFileSync(OUT, JSON.stringify(best));
+    console.log('mejor: cruces', cr, 'flechas sobre nodos', h, 'costo', Math.round(c), 't=' + Math.round((Date.now() - t0) / 1000) + 's');
+  }
+  if (cr === 0 && h === 0 && c < 5000) break;
 }
-console.log('FIN cruces', bcr);
+console.log('FIN cruces', bcr, 'sobre nodos', bh);
