@@ -802,6 +802,7 @@ window.onerror = function(msg, url, line, col, error) {
     color: #000; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 900;
     letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer;
   }
+  body.embed-actores .bottom-experience-bar { display: none !important; }
 </style>
 
 <!-- Three.js, OrbitControls, GSAP -->
@@ -1919,7 +1920,7 @@ window.onerror = function(msg, url, line, col, error) {
         const t = bg.userData.taxonData;
         if (t) {
           const cIdx = (typeof t.cat === 'number') ? t.cat : (TAXONOMIC_CONVENTIONS[t.cat]?.catIdx ?? 0);
-          bg.visible = (opts.cats[cIdx] !== false) && insideTerritory(t.territoryPos);
+          bg.visible = (opts.cats[cIdx] !== false) && !(rawNodes[bg.userData.taxonIndex] && rawNodes[bg.userData.taxonIndex].hiddenByUser) && insideTerritory(t.territoryPos);
         }
       });
     }
@@ -4659,6 +4660,16 @@ window.onerror = function(msg, url, line, col, error) {
   }
 
   animate();
+
+  // Modo incrustado (desde red-actores-plana.html): ?ids=ACT-..,ACT-.. deja solo esos actores y materializa de una vez
+  (function () {
+    const ids = new URLSearchParams(location.search).get('ids'); if (!ids) return;
+    const keep = new Set(ids.split(','));
+    document.body.classList.add('embed-actores');
+    rawNodes.forEach(n => { n.hiddenByUser = !keep.has(n.taxaId); });
+    recalculateDegreesAndSizes();
+    setTimeout(() => { const b = document.getElementById('btnPlayTransition'); if (b) b.click(); }, 700);
+  })();
 
   // Resize Handler
   window.addEventListener("resize", () => {
