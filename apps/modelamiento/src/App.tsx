@@ -99,15 +99,30 @@ function decodeBuildings(rows: number[][]) {
   });
   return { type: 'FeatureCollection' as const, features };
 }
+function decodeTrees(flat: number[]) {
+  const features = [];
+  let lo = 0, la = 0;
+  for (let i = 0; i < flat.length; i += 3) {
+    const h = flat[i] / 10; lo += flat[i + 1]; la += flat[i + 2];
+    const lon = lo / 1e5, lat = la / 1e5, r = Math.max(0.8, h * 0.55);
+    const dy = r / 110574, dx = r / (111320 * Math.cos((lat * Math.PI) / 180));
+    const ring: [number, number][] = [];
+    for (let k = 0; k < 6; k++) { const t = (k / 6) * Math.PI * 2; ring.push([lon + dx * Math.cos(t), lat + dy * Math.sin(t)]); }
+    ring.push(ring[0]);
+    features.push({ type: 'Feature' as const, properties: { h, b: h * 0.32 }, geometry: { type: 'Polygon' as const, coordinates: [ring] } });
+  }
+  return { type: 'FeatureCollection' as const, features };
+}
 async function load3D(map: maplibregl.Map, isDead: () => boolean) {
   const j = (f: string) => fetch('./data/' + f).then((r) => r.json());
-  const [b, p, w, v] = await Promise.all([j('edificios.json'), j('parques.json'), j('agua.json'), j('vias.json')]);
+  const [b, p, w, v, tr] = await Promise.all([j('edificios.json'), j('parques.json'), j('agua.json'), j('vias.json'), j('arboles.json')]);
   if (isDead()) return false;
   const opt = { maxzoom: 16, tolerance: 0.6, buffer: 16 };
   map.addSource('parques', { type: 'geojson', data: p, ...opt });
   map.addSource('agua', { type: 'geojson', data: w, ...opt });
   map.addSource('vias', { type: 'geojson', data: v, ...opt });
   map.addSource('edificios', { type: 'geojson', data: decodeBuildings(b), ...opt });
+  map.addSource('arboles', { type: 'geojson', data: decodeTrees(tr), ...opt });
   map.addLayer({ id: 'parques-fill', type: 'fill', source: 'parques', paint: { 'fill-color': '#3a4d36', 'fill-opacity': 0 } });
   map.addLayer({ id: 'agua-fill', type: 'fill', source: 'agua', paint: { 'fill-color': '#3f7a96', 'fill-opacity': 0 } });
   map.addLayer({ id: 'vias-line', type: 'line', source: 'vias', paint: { 'line-color': '#55555f', 'line-width': 0.7, 'line-opacity': 0 } });
@@ -117,6 +132,13 @@ async function load3D(map: maplibregl.Map, isDead: () => boolean) {
       'fill-extrusion-color': ['interpolate', ['linear'], ['get', 'h'], 3, '#b9b4ac', 12, '#d6d2ca', 40, '#f2efe9'],
       'fill-extrusion-height': ['*', ['get', 'h'], 0.001], 'fill-extrusion-base': 0, 'fill-extrusion-opacity': 0,
       'fill-extrusion-vertical-gradient': true,
+    },
+  });
+  map.addLayer({
+    id: 'arboles3d', type: 'fill-extrusion', source: 'arboles',
+    paint: {
+      'fill-extrusion-color': ['interpolate', ['linear'], ['get', 'h'], 2, '#3d6a38', 8, '#4e8944', 18, '#6aa95a'],
+      'fill-extrusion-height': ['*', ['get', 'h'], 0.001], 'fill-extrusion-base': ['*', ['get', 'b'], 0.001], 'fill-extrusion-opacity': 0,
     },
   });
   map.setLight({ anchor: 'viewport', color: '#ffffff', intensity: 0.5, position: [1.3, 210, 55] });
@@ -330,6 +352,9 @@ export default function App() {
     const m3 = a.map, f = Math.min(1, k * 1.6);
     m3.setPaintProperty('bld3d', 'fill-extrusion-height', ['*', ['get', 'h'], Math.max(0.001, k)]);
     m3.setPaintProperty('bld3d', 'fill-extrusion-opacity', 0.96 * Math.min(1, k * 3));
+    m3.setPaintProperty('arboles3d', 'fill-extrusion-height', ['*', ['get', 'h'], Math.max(0.001, k)]);
+    m3.setPaintProperty('arboles3d', 'fill-extrusion-base', ['*', ['get', 'b'], Math.max(0.001, k)]);
+    m3.setPaintProperty('arboles3d', 'fill-extrusion-opacity', 0.95 * Math.min(1, k * 3));
     m3.setPaintProperty('parques-fill', 'fill-opacity', 0.85 * f);
     m3.setPaintProperty('agua-fill', 'fill-opacity', 0.9 * f);
     m3.setPaintProperty('vias-line', 'line-opacity', 0.75 * f);

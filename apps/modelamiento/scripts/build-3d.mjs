@@ -70,3 +70,18 @@ for (const [kind, p] of net.edges) {
 }
 writeFileSync('public/data/vias.json', JSON.stringify({ type: 'FeatureCollection', features: lines }));
 console.log('vías', lines.length);
+
+// árboles reales (x, y locales, altura en m): se guardan como enteros con deltas, ordenados por longitud
+const T = read('kennedy_trees_real.json');
+const tr = [];
+for (const t of T) {
+  const [lon, lat] = inv(t[0], t[1]);
+  if (!inside(lon, lat)) continue;
+  tr.push([Math.round(lon * 1e5), Math.round(lat * 1e5), Math.max(4, Math.min(300, Math.round(t[2] * 10)))]);
+}
+tr.sort((a, b) => a[0] - b[0]);
+const flat = [];
+let pl = 0, pa = 0;
+for (const [lo, la, h] of tr) { flat.push(h, lo - pl, la - pa); pl = lo; pa = la; }
+writeFileSync('public/data/arboles.json', JSON.stringify(flat));
+console.log('árboles', T.length, '->', tr.length);
