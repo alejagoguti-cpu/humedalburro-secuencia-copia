@@ -5,8 +5,6 @@ import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 import * as maplibregl from 'maplibre-gl';
 import { Cpu, Droplets, Factory, House, Leaf, Network, Route, Store, Trees, Truck, Users, Waves, type LucideIcon } from 'lucide-react';
 import { load3D, reduced, stageSize } from './App';
-import RedPremium from './RedPremium';
-import Diagram, { type DSpec } from './Diagram';
 import {
   BEATS2, CAPS, COLORS, CORAB, EVID_COLOR, INTERD, LABELS2, LINE_COLORS, PLACES2, PRESS, SYSTEMS, type LngLat,
 } from './conclusion-content';
@@ -63,7 +61,7 @@ function layout(b: number, m: boolean): Record<string, St> {
   // palabras del hallazgo
   if (b === 0) { L.w1 = T(0.5, 0.5, 1, 1); L.w2 = hide(0.5, 0.5); L.sub1 = hide(0.5, 0.64); }
   else if (b === 1) { L.w1 = T(m ? 0.5 : 0.28, m ? 0.3 : 0.44, 1, m ? 0.62 : 0.62); L.w2 = T(m ? 0.5 : 0.72, m ? 0.5 : 0.44, 1, m ? 0.62 : 0.62, 0.15); L.sub1 = T(0.5, m ? 0.72 : 0.64, 1, 1, 1.6); }
-  else { const o = b <= 9 ? 1 : 0; L.w1 = T(m ? 0.27 : 0.098, m ? 0.05 : 0.05, o, m ? 0.3 : 0.28); L.w2 = T(m ? 0.73 : 0.35, m ? 0.05 : 0.05, o, m ? 0.3 : 0.28); L.sub1 = hide(0.5, 0.64); }
+  else { const o = b <= 9 ? 1 : 0; L.w1 = T(m ? 0.27 : 0.098, 0.05, o, m ? 0.3 : 0.28); L.w2 = T(m ? 0.73 : 0.35, 0.05, o, m ? 0.3 : 0.28); L.sub1 = hide(0.5, 0.64); }
   L.hint = b === 0 ? T(0.5, m ? 0.64 : 0.62, 0.9, 1, 1.5) : hide(0.5, 0.62);
   // encabezados
   const hy = m ? 0.15 : 0.125;
@@ -73,7 +71,7 @@ function layout(b: number, m: boolean): Record<string, St> {
   L.hRec = b === 8 ? T(0.5, 0.2, 1, 1, 0.3) : b === 9 ? T(0.5, m ? 0.09 : 0.1, 1, 0.5) : hide(0.5, 0.2);
   L.subRec = b === 8 ? T(0.5, m ? 0.34 : 0.32, 1, 1, 0.9) : hide(0.5, 0.32);
   // pines anclados al mapa
-  L.pinC = b === 2 ? PIN(1, 1, 3.2) : PIN(0, 0.96);
+  L.pinC = b >= 2 && b <= 6 ? PIN(1, 1, b === 2 ? 3.2 : 0.2) : PIN(0, 0.96);
   L.hubW = b === 9 ? PIN(1, 1, 0.8) : PIN(0, 0.96);
   // presiones
   const pp = m ? [[0.25, 0.34], [0.75, 0.34], [0.25, 0.6], [0.75, 0.6]] : [[0.14, 0.3], [0.86, 0.3], [0.14, 0.52], [0.86, 0.52]];
@@ -100,11 +98,9 @@ function layout(b: number, m: boolean): Record<string, St> {
   ];
   cpos.forEach(([x, y], i) => { L['c' + i] = b === 10 && !m ? T(x, y, 1, 1, 1.6 + i * 0.1) : hide(x, y); });
   // final
-  L.fin = b === 11 ? T(0.5, m ? 0.08 : 0.09, 1, 1, 0.3) : hide(0.5, 0.09);
-  L.finSub = b === 11 ? T(0.5, m ? 0.14 : 0.16, 1, 1, 1.6) : hide(0.5, 0.16);
-  L.stats = b === 11 ? T(0.5, m ? 0.22 : 0.24, 1, 1, 2) : hide(0.5, 0.24);
-  L.noteN = b === 11 ? T(m ? 0.5 : 0.135, m ? 0.9 : 0.86, 1, 1, 3) : hide(0.135, 0.86);
-  L.cta = b === 11 ? T(0.5, m ? 0.31 : 0.335, 1, 1, 2.6) : hide(0.5, 0.335);
+  L.fin = b === 11 ? T(0.5, m ? 0.2 : 0.2, 1, 1, 0.8) : hide(0.5, 0.2);
+  L.finSub = b === 11 ? T(0.5, m ? 0.29 : 0.29, 1, 1, 1.4) : hide(0.5, 0.29);
+  L.cta = b === 11 ? T(0.5, m ? 0.37 : 0.37, 1, 1, 2) : hide(0.5, 0.37);
   // leyendas y pie
   L.leg3 = b >= 3 && b <= 6 ? T(m ? 0.5 : 0.135, m ? 0.88 : 0.79, 1, 1, b === 3 ? 6.4 : 0.3) : hide(0.135, 0.79);
   L.legS = b === 7 ? T(m ? 0.5 : 0.135, m ? 0.88 : 0.79, 1, 1, 2.4) : hide(0.135, 0.79);
@@ -123,6 +119,38 @@ const FX: [number, number][] = [[0.1, 0.34], [0.1, 0.62], [0.3, 0.8], [0.7, 0.8]
 const CONNS: Conn[] = [
   ...[0, 1, 2, 3, 4].map((i): Conn => ({ id: 'f' + i, a: 'rt:w1', b: 'lf:w2', color: '#e6e6e6', w: 1.1, style: 'solid', bulge: [-28, -14, 0, 14, 28][i], show: (b) => b >= 1 && b <= 7, op: (b) => (b >= 2 ? 0.5 : 0.9), delay: () => 0.4 + i * 0.12 })),
   ...FX.map((_, i): Conn => ({ id: 'fl' + i, a: 'fx:' + i, b: 'place:corab', color: '#f0f0f0', w: 1.2, style: 'dashed', show: (b) => b === 2 || b === 3, op: (b) => (b === 2 ? 0.8 : 0.25), delay: () => 4.0 + i * 0.25 })),
+  { id: 'cv', a: 'place:corab', b: 'el:p1', color: LINE_COLORS.vial, w: 2.2, style: 'solid', show: (b) => b >= 3 && b <= 7, op: (b) => [0, 0, 0, 1, 0.8, 0.2, 0.9, 0.12][b] ?? 0, delay: (b) => (b === 3 ? 0.6 : 0) },
+  { id: 'ch', a: 'place:corab', b: 'el:p4', color: LINE_COLORS.hidrico, w: 2.2, style: 'solid', bulge: 34, show: (b) => b >= 3 && b <= 7, op: (b) => [0, 0, 0, 1, 0.8, 0.2, 0.9, 0.12][b] ?? 0, delay: (b) => (b === 3 ? 2.4 : 0) },
+  { id: 'ce', a: 'place:corab', b: 'el:p4', color: LINE_COLORS.ecologico, w: 2.2, style: 'solid', bulge: -34, show: (b) => b >= 3 && b <= 7, op: (b) => [0, 0, 0, 1, 0.8, 0.2, 0.9, 0.12][b] ?? 0, delay: (b) => (b === 3 ? 4.2 : 0) },
+  { id: 'cb', a: 'place:corab', b: 'el:p3', color: LINE_COLORS.socio, w: 2, style: 'dotted', show: (b) => b >= 3 && b <= 7, op: (b) => [0, 0, 0, 1, 0.8, 0.2, 0.9, 0.12][b] ?? 0, delay: (b) => (b === 3 ? 6.0 : 0) },
+  { id: 'cp', a: 'place:corab', b: 'el:p2', color: '#d0d0d0', w: 2, style: 'dotted', show: (b) => b >= 3 && b <= 7, op: (b) => [0, 0, 0, 0.8, 0.7, 0.2, 0.8, 0.12][b] ?? 0, delay: (b) => (b === 3 ? 6.2 : 0) },
+  { id: 'r1', a: 'el:p1', b: 'el:p2', color: '#ffffff', w: 2.2, style: 'solid', bulge: -44, show: (b) => b === 6, op: () => 1, delay: () => 0.3 },
+  { id: 'r2', a: 'el:p2', b: 'el:p4', color: '#ffffff', w: 2.2, style: 'solid', bulge: -44, show: (b) => b === 6, op: () => 1, delay: () => 0.6 },
+  { id: 'r3', a: 'el:p4', b: 'el:p3', color: '#ffffff', w: 2.2, style: 'solid', bulge: -44, show: (b) => b === 6, op: () => 1, delay: () => 0.9 },
+  { id: 'r4', a: 'el:p3', b: 'el:p1', color: '#ffffff', w: 2.2, style: 'solid', bulge: -44, show: (b) => b === 6, op: () => 1, delay: () => 1.2 },
+  // capacidades: existentes (continua), potenciales (guiones) y propuestas (puntos)
+  { id: 'qa1', a: 'el:q1', b: 'place:act1', color: '#6fb1a7', w: 1.6, style: 'solid', show: (b) => b === 7, op: () => 1, delay: () => 1.4 },
+  { id: 'qa2', a: 'el:q1', b: 'place:act2', color: '#6fb1a7', w: 1.6, style: 'solid', show: (b) => b === 7, op: () => 1, delay: () => 1.6 },
+  { id: 'qa3', a: 'el:q2', b: 'place:avcali', color: '#6fb1a7', w: 1.6, style: 'solid', show: (b) => b === 7, op: () => 1, delay: () => 1.9 },
+  { id: 'qa4', a: 'el:q2', b: 'place:suds', color: COLORS.coral, w: 1.8, style: 'dotted', show: (b) => b === 7, op: () => 1, delay: () => 2.1 },
+  { id: 'qa5', a: 'el:q3', b: 'place:burro', color: '#6fb1a7', w: 1.6, style: 'solid', show: (b) => b === 7, op: () => 1, delay: () => 2.3 },
+  { id: 'qc1', a: 'el:q1', b: 'el:q2', color: COLORS.mustard, w: 1.8, style: 'dashed', bulge: 30, show: (b) => b === 7, op: () => 1, delay: () => 2.8 },
+  { id: 'qc2', a: 'el:q2', b: 'el:q3', color: COLORS.coral, w: 1.8, style: 'dotted', bulge: 30, show: (b) => b === 7, op: () => 1, delay: () => 3.1 },
+  { id: 'qc3', a: 'el:q1', b: 'el:q3', color: COLORS.mustard, w: 1.8, style: 'dashed', bulge: -50, show: (b) => b === 7, op: () => 1, delay: () => 3.4 },
+  // interdependencias alrededor de los humedales
+  { id: 'ia1', a: 'el:hubW', b: 'el:i1', color: LINE_COLORS.hidrico, w: 2.2, style: 'solid', show: (b) => b === 9, op: () => 1, delay: () => 1.2 },
+  { id: 'ia2', a: 'el:hubW', b: 'el:i2', color: LINE_COLORS.socio, w: 2, style: 'dotted', show: (b) => b === 9, op: () => 1, delay: () => 1.55 },
+  { id: 'ia3', a: 'el:hubW', b: 'el:i3', color: LINE_COLORS.vial, w: 2.2, style: 'solid', show: (b) => b === 9, op: () => 1, delay: () => 1.9 },
+  { id: 'ia4', a: 'el:hubW', b: 'el:i4', color: COLORS.coral, w: 2, style: 'dotted', show: (b) => b === 9, op: () => 1, delay: () => 2.25 },
+  // red propia integrada
+  ...SYSTEMS.map((s, i): Conn => ({ id: 'hs' + i, a: 'el:hubR', b: 'el:' + s.id, color: '#e6e6e6', w: 1.4, style: 'solid', show: (b) => b === 10, op: () => 0.9, delay: () => 0.8 + i * 0.3 })),
+  { id: 'tri1', a: 'el:s1', b: 'el:s2', color: '#ffffff', w: 1.6, style: 'solid', bulge: -40, show: (b) => b === 10, op: () => 0.9, delay: () => 1.9 },
+  { id: 'tri2', a: 'el:s2', b: 'el:s3', color: '#ffffff', w: 1.6, style: 'solid', bulge: -40, show: (b) => b === 10, op: () => 0.9, delay: () => 2.2 },
+  { id: 'tri3', a: 'el:s3', b: 'el:s1', color: '#ffffff', w: 1.6, style: 'solid', bulge: -40, show: (b) => b === 10, op: () => 0.9, delay: () => 2.5 },
+  ...SYSTEMS.flatMap((s, si) => s.comps.map((_, ci): Conn => {
+    const idx = SYSTEMS.slice(0, si).reduce((n, x) => n + x.comps.length, 0) + ci;
+    return { id: 'cc' + idx, a: 'el:s' + (si + 1), b: 'el:c' + idx, color: s.color, w: 1, style: 'solid', show: (b) => b === 10, op: () => 0.7, delay: () => 2.6 + idx * 0.08 };
+  })),
 ];
 
 type Pt = { x: number; y: number };
@@ -144,13 +172,13 @@ function cam(b: number, m: boolean): Cam {
   const dz = m ? -0.8 : 0;
   if (b <= 1) return { c: MID, z: 12.4 + dz, pitch: 0, bearing: 0 };
   if (b === 2) return { c: CORAB, z: 15.1 + dz, pitch: 52, bearing: -18 };
-  if (b === 3) return { c: CORAB, z: 14.0 + dz, pitch: 50, bearing: -18 };
-  if (b === 4 || b === 5) return { c: CORAB, z: 13.3 + dz, pitch: 46, bearing: -18 };
-  if (b === 6) return { c: CORAB, z: 13.3 + dz, pitch: 46, bearing: -18 };
+  if (b === 3) return { c: MID, z: 13.9 + dz, pitch: 52, bearing: -18 };
+  if (b === 4 || b === 5) return { c: MID, z: 12.8 + dz, pitch: 46, bearing: -18 };
+  if (b === 6) return { c: MID, z: 13.0 + dz, pitch: 46, bearing: -18 };
   if (b === 7) return { c: MID, z: 13.2 + dz, pitch: 48, bearing: -18 };
   if (b === 8 || b === 9) return { c: WET, z: 13.4 + dz, pitch: 50, bearing: -18 };
-  if (b === 10) return { c: MID, z: 12.7 + dz, pitch: 0, bearing: 0 };
-  return { c: MID, z: 12.55 + dz, pitch: 54, bearing: -10 };
+  if (b === 10) return { c: MID, z: 12.9 + dz, pitch: 42, bearing: -14 };
+  return { c: MID, z: 12.2 + dz, pitch: 38, bearing: -10 };
 }
 type HL = { corab: number; vias: number; canales: number; hum: number; parq: number; barr: number; bld: number };
 const HLT: HL[] = [
@@ -165,7 +193,7 @@ const HLT: HL[] = [
   { corab: 0, vias: 0, canales: 0.5, hum: 1, parq: 0.3, barr: 0, bld: 0.6 },
   { corab: 0, vias: 0.9, canales: 1, hum: 1, parq: 0.5, barr: 1, bld: 0.5 },
   { corab: 0, vias: 0.3, canales: 0.3, hum: 0.4, parq: 0.2, barr: 0.3, bld: 0.35 },
-  { corab: 0, vias: 0.25, canales: 0.35, hum: 0.5, parq: 0.2, barr: 0, bld: 0.5 },
+  { corab: 0.5, vias: 0.6, canales: 0.7, hum: 0.9, parq: 0.4, barr: 0.5, bld: 0.8 },
 ];
 const HLDELAY3: Partial<Record<keyof HL, number>> = { vias: 0.6, canales: 2.4, hum: 4.2, barr: 6.0, parq: 6.2 };
 
@@ -183,68 +211,12 @@ const CAPTIONS: Record<number, { k: string; t: string }> = {
   9: { k: 'Más allá del borde', t: 'La intervención debe considerar las interdependencias del sistema. Los perímetros de protección se mantienen.' },
 };
 
-const EV = EVID_COLOR;
-const PRESS_SPEC: DSpec = {
-  core: { title: 'CORABASTOS', sub: 'Concentración comercial y logística', color: '#d9755f' },
-  nodes: [
-    { id: 'p1', title: 'MOVILIDAD', badge: 'DOCUMENTADA', badgeColor: EV.DOCUMENTADA, Icon: Truck, color: '#9c8fc0', ink: '#150f2b', ang: 315 },
-    { id: 'p2', title: 'ESPACIO PÚBLICO', badge: 'HIPOTÉTICA', badgeColor: EV.HIPOTÉTICA, Icon: Trees, color: '#a3b86c', ink: '#1c2410', ang: 45 },
-    { id: 'p4', title: 'ECOSISTEMAS', badge: 'DOCUMENTADA', badgeColor: EV.DOCUMENTADA, Icon: Droplets, color: '#6fb1a7', ink: '#06201c', ang: 135 },
-    { id: 'p3', title: 'BARRIOS', badge: 'INFERIDA', badgeColor: EV.INFERIDA, Icon: House, color: '#cdae67', ink: '#2a2008', ang: 225 },
-  ],
-  links: [
-    { id: 'cv', a: 'core', b: 'p1', style: 'solid', color: LINE_COLORS.vial, arrow: true, delay: 0.6 },
-    { id: 'ch', a: 'core', b: 'p4', style: 'solid', color: LINE_COLORS.hidrico, arrow: true, delay: 2.4, off: -8 },
-    { id: 'ce', a: 'core', b: 'p4', style: 'solid', color: LINE_COLORS.ecologico, arrow: true, delay: 4.2, off: 8 },
-    { id: 'cb', a: 'core', b: 'p3', style: 'dotted', color: LINE_COLORS.socio, delay: 6.0 },
-    { id: 'cp', a: 'core', b: 'p2', style: 'dotted', color: '#d0d0d0', delay: 6.2 },
-    { id: 'r1', a: 'p1', b: 'p2', style: 'solid', color: '#ffffff', arrow: true, ring: true, delay: 0.4 },
-    { id: 'r2', a: 'p2', b: 'p4', style: 'solid', color: '#ffffff', arrow: true, ring: true, delay: 0.6 },
-    { id: 'r3', a: 'p4', b: 'p3', style: 'solid', color: '#ffffff', arrow: true, ring: true, delay: 0.8 },
-    { id: 'r4', a: 'p3', b: 'p1', style: 'solid', color: '#ffffff', arrow: true, ring: true, delay: 1.0 },
-  ],
-};
-const CAP_SPEC: DSpec = {
-  core: { title: 'CAPACIDAD', sub: 'Respuesta territorial', color: '#ebe5d9' },
-  nodes: [
-    { id: 'q3', title: 'ECOSISTEMAS', badge: 'EXISTENTE', badgeColor: '#6fb1a7', sub: 'Humedales con perímetro vigente', Icon: Waves, color: '#6fb1a7', ink: '#06201c', ang: 0 },
-    { id: 'q2', title: 'INFRAESTRUCTURA', badge: 'EXISTENTE', badgeColor: '#6fb1a7', sub: 'Av. Ciudad de Cali · SuDS (propuesta)', Icon: Route, color: '#9c8fc0', ink: '#150f2b', ang: 120 },
-    { id: 'q1', title: 'COMUNIDADES', badge: 'EXISTENTE', badgeColor: '#6fb1a7', sub: 'Colectivos ambientales · JAC de Kennedy', Icon: Users, color: '#cdae67', ink: '#2a2008', ang: 240 },
-  ],
-  links: [
-    { id: 'k1', a: 'core', b: 'q1', style: 'solid', color: '#6fb1a7', arrow: true, delay: 0.5 },
-    { id: 'k2', a: 'core', b: 'q2', style: 'solid', color: '#6fb1a7', arrow: true, delay: 0.7 },
-    { id: 'k3', a: 'core', b: 'q3', style: 'solid', color: '#6fb1a7', arrow: true, delay: 0.9 },
-    { id: 'c1', a: 'q1', b: 'q3', style: 'dashed', color: COLORS.mustard, ring: true, delay: 2.0 },
-    { id: 'c2', a: 'q3', b: 'q2', style: 'dotted', color: COLORS.coral, ring: true, delay: 2.3 },
-    { id: 'c3', a: 'q2', b: 'q1', style: 'dashed', color: COLORS.mustard, ring: true, delay: 2.6 },
-  ],
-};
-const WET_SPEC: DSpec = {
-  core: { title: 'HUMEDALES', sub: 'Perímetros de protección vigentes', color: '#6fd07a' },
-  nodes: [
-    { id: 'i1', title: 'SISTEMAS HÍDRICOS', Icon: Droplets, color: '#5ab0ff', ink: '#06182b', ang: 315 },
-    { id: 'i2', title: 'BARRIOS', Icon: House, color: '#cdae67', ink: '#2a2008', ang: 45 },
-    { id: 'i4', title: 'ACTIVIDADES ECONÓMICAS', Icon: Store, color: '#d9755f', ink: '#2a0d06', ang: 135 },
-    { id: 'i3', title: 'MOVILIDAD', Icon: Truck, color: '#9c8fc0', ink: '#150f2b', ang: 225 },
-  ],
-  links: [
-    { id: 'ia1', a: 'core', b: 'i1', style: 'solid', color: LINE_COLORS.hidrico, arrow: true, delay: 0.8 },
-    { id: 'ia3', a: 'core', b: 'i3', style: 'solid', color: LINE_COLORS.vial, arrow: true, delay: 1.1 },
-    { id: 'ia2', a: 'core', b: 'i2', style: 'dotted', color: LINE_COLORS.socio, delay: 1.4 },
-    { id: 'ia4', a: 'core', b: 'i4', style: 'dotted', color: COLORS.coral, delay: 1.7 },
-  ],
-};
-const emphPress = (id: string, b: number, ring: boolean) => (ring ? (b === 6 ? 1 : 0) : b === 6 ? 0.28 : b === 5 ? 0.85 : 1);
-const emphAll = () => 1;
-interface Red { nodes: [number, number, number, string][]; edges: [number, number, number, number][]; capas: string[]; tipos: string[]; total: { nodos: number; relaciones: number; capas: number } }
 interface Api { map: maplibregl.Map; markers: Record<string, HTMLElement>; hl: HL; three: { ready: boolean; on: boolean; k: { v: number } }; ready: boolean }
 
 export default function Conclusion() {
   const [beat, setBeat] = useState(0);
   const [selP, setSelP] = useState<string | null>(null);
   const [m, setM] = useState(() => window.innerWidth < 768);
-  const [size, setSize] = useState(() => stageSize());
   const [mapReady, setMapReady] = useState(false);
   const beatRef = useRef(0);
   const prevRef = useRef(0);
@@ -257,19 +229,10 @@ export default function Conclusion() {
   const api = useRef<Api | null>(null);
   const timers = useRef<number[]>([]);
   const cs = useRef<Record<string, { p: number; op: number }>>({});
-  const paths = useRef<Record<string, { base: SVGPathElement | null; flow: SVGPathElement | null; trav: SVGPathElement | null }>>({});
+  const paths = useRef<Record<string, { base: SVGPathElement | null; flow: SVGPathElement | null }>>({});
   const mRef = useRef(m); mRef.current = m;
   const selRef = useRef<string | null>(null); selRef.current = selP;
 
-  const projectAt = useCallback((ll: LngLat) => () => {
-    const ap = api.current, el = mapElRef.current, st = stageRef.current;
-    if (!ap || !ap.ready || !el || !st) return null;
-    const r = el.getBoundingClientRect(), s = st.getBoundingClientRect(), k = r.width / (el.clientWidth || 1), p = ap.map.project(ll);
-    return { x: r.left - s.left + p.x * k, y: r.top - s.top + p.y * k };
-  }, []);
-  const projCorab = useRef(projectAt(CORAB)).current;
-  const projMid = useRef(projectAt(MID)).current;
-  const projWet = useRef(projectAt(WET)).current;
   const go = useCallback((i: number) => {
     const t = Math.max(0, Math.min(N - 1, i));
     gsap.to(window, { scrollTo: { y: t * window.innerHeight, autoKill: false }, duration: reduced() ? 0 : 0.9, ease: 'power2.inOut' });
@@ -295,6 +258,8 @@ export default function Conclusion() {
       gsap.set(el, { xPercent: -50, yPercent: -50, x: Number.isFinite(s.x) ? s.x * W : 0, y: Number.isFinite(s.y) ? s.y * H : 0, opacity: 0, scale: s.s });
     });
     CONNS.forEach((c) => { cs.current[c.id] = { p: 0, op: 0 }; });
+    if (reduced()) gsap.set(els.current.w1!, { opacity: 1 });
+    else gsap.fromTo(els.current.w1!, { opacity: 0, y: '+=14' }, { opacity: 1, y: '-=14', duration: 1.8, ease: 'power2.out', delay: 0.2 });
   }, []);
 
   // ---------- reencuadre automático
@@ -302,7 +267,7 @@ export default function Conclusion() {
     let t = 0;
     const refit = () => {
       window.clearTimeout(t);
-      t = window.setTimeout(() => { setSize(stageSize()); setM(window.innerWidth < 768); api.current?.map.resize(); applyLayout(beatRef.current, true); ScrollTrigger.refresh(); }, 60);
+      t = window.setTimeout(() => { setM(window.innerWidth < 768); api.current?.map.resize(); applyLayout(beatRef.current, true); ScrollTrigger.refresh(); }, 60);
     };
     window.addEventListener('resize', refit);
     window.visualViewport?.addEventListener('resize', refit);
@@ -412,10 +377,6 @@ export default function Conclusion() {
     return () => { dead = true; map?.remove(); api.current = null; };
   }, []);
 
-  // red POT-Kennedy real animada (se enciende desde Corabastos hacia afuera)
-  const netRef = useRef<SVGSVGElement>(null);
-  const net = useRef<{ red: Red | null; P: { v: number }; O: { v: number } }>({ red: null, P: { v: 0 }, O: { v: 0 } });
-  const orb = useRef({ on: false, base: -10, t0: 0 });
   const clearTimers = () => { timers.current.forEach((t) => window.clearTimeout(t)); timers.current = []; };
   const later = (fn: () => void, ms: number) => { timers.current.push(window.setTimeout(fn, reduced() ? 0 : ms)); };
   const showMk = (ids: string[]) => { const a = api.current; if (!a) return; Object.entries(a.markers).forEach(([id, el]) => el.classList.toggle('on', ids.includes(id))); };
@@ -425,19 +386,17 @@ export default function Conclusion() {
     const a = api.current; if (!a || !mapReady) return;
     const b = beat, prev = prevRef.current;
     clearTimers();
-    orb.current.on = false;
     const { H } = stageSize();
     const C = cam(b, mRef.current);
-    const fly = (ms: number) => a.map.easeTo({ center: C.c, zoom: C.z, pitch: C.pitch, bearing: C.bearing, padding: { top: Math.round(H * (b === 11 ? 0.4 : 0.15)), bottom: Math.round(H * 0.1), left: 0, right: 0 }, duration: reduced() ? 0 : ms, essential: true });
-    gsap.to(mapWrapRef.current, { opacity: b < 2 ? 0 : b === 10 ? 0.3 : b === 11 ? 0.78 : b === 8 ? 0.8 : b >= 3 && b <= 7 ? 0.5 : 1, scale: b < 2 ? 0.94 : 1, duration: reduced() ? 0 : 1.4, ease: 'power2.inOut', delay: b === 2 && prev < 2 ? 0.4 : 0 });
+    const fly = (ms: number) => a.map.easeTo({ center: C.c, zoom: C.z, pitch: C.pitch, bearing: C.bearing, padding: { top: Math.round(H * (b === 11 ? 0.36 : 0.15)), bottom: Math.round(H * 0.1), left: 0, right: 0 }, duration: reduced() ? 0 : ms, essential: true });
+    gsap.to(mapWrapRef.current, { opacity: b < 2 ? 0 : b === 10 ? 0.55 : b === 8 ? 0.8 : 1, scale: b < 2 ? 0.94 : 1, duration: reduced() ? 0 : 1.4, ease: 'power2.inOut', delay: b === 2 && prev < 2 ? 0.4 : 0 });
     if (b < 2) { to3D(false); fly(0); }
     else {
       if (b === 2 && prev < 2) { a.map.jumpTo({ center: MID, zoom: 12.8, pitch: 0, bearing: 0 }); later(() => fly(3400), 900); later(() => to3D(true), 600); }
       else { fly(b === 3 ? 2600 : 2200); to3D(true); }
     }
-    if (b === 11) orb.current = { on: true, base: C.bearing, t0: performance.now() + (reduced() ? 1e12 : 3600) };
     // marcadores
-    const mk = b === 2 ? ['corab'] : b === 7 ? ['act1', 'act2', 'avcali', 'suds', 'burro'] : b === 8 || b === 9 ? ['burro', 'techo', 'lavaca'] : [];
+    const mk = b === 2 || b === 3 || b === 4 || b === 5 || b === 6 ? ['corab'] : b === 7 ? ['act1', 'act2', 'avcali', 'suds', 'burro'] : b === 8 || b === 9 ? ['burro', 'techo', 'lavaca'] : b === 11 ? ['corab'] : [];
     later(() => showMk(mk), b === 2 ? 3000 : 600);
     // capas de análisis (con escalonado propio en la propagación)
     const target = HLT[b];
@@ -448,110 +407,16 @@ export default function Conclusion() {
     return clearTimers;
   }, [beat, mapReady]);
 
-  // ---------- red viva final
-  useEffect(() => {
-    if (!mapReady) return;
-    const svg = netRef.current; if (!svg) return;
-    let dead = false; let tickFn: (() => void) | null = null;
-    fetch('./data/red.json').then((r) => r.json()).then((red: Red) => {
-      if (dead) return;
-      net.current.red = red;
-      const NS = 'http://www.w3.org/2000/svg';
-      const mkEl = (tag: string, at: Record<string, string | number>) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, String(at[k])); return e; };
-      const dist = (i: number) => Math.hypot((red.nodes[i][0] - CORAB[0]) * 1.1, red.nodes[i][1] - CORAB[1]);
-      const maxD = Math.max(...red.nodes.map((_, i) => dist(i))) || 1;
-      const deg = red.nodes.map(() => 0); red.edges.forEach(([s, t]) => { deg[s]++; deg[t]++; });
-      const gE = mkEl('g', {}), gP = mkEl('g', {}), gN = mkEl('g', {}); svg.append(gE, gP, gN);
-      const eRank = red.edges.map(([s, t]) => (dist(s) + dist(t)) / 2 / maxD);
-      const eEls = red.edges.map(([s, , , w], i) => { const p = mkEl('path', { fill: 'none', stroke: red.capas[red.nodes[s][2]], 'stroke-width': 0.9 + w * 0.55, 'stroke-linecap': 'round', pathLength: 1, 'stroke-dasharray': 1, 'stroke-dashoffset': 1, opacity: 0 }); gE.appendChild(p); return p; });
-      const pulses = red.edges.map((e, i) => ({ i, ph: (i * 0.37) % 1, sp: 0.16 + ((i * 7) % 5) * 0.035 })).filter((_, i) => red.edges[i][3] >= 2 || i % 3 === 0).slice(0, 46);
-      const pEls = pulses.map((pl) => { const c = mkEl('circle', { r: 2.6, fill: '#ffffff', opacity: 0 }); (c as SVGElement).style.filter = 'drop-shadow(0 0 5px ' + red.capas[red.nodes[red.edges[pl.i][0]][2]] + ')'; gP.appendChild(c); return c; });
-      const nRank = red.nodes.map((_, i) => dist(i) / maxD);
-      const short = (s: string) => s.split(' (')[0].split(' / ')[0].replace(/^Flora Nativa Hub: /, '').toUpperCase().slice(0, 30);
-      const nEls = red.nodes.map((n, i) => {
-        const g = mkEl('g', {}); const halo = mkEl('circle', { fill: 'none', stroke: red.capas[n[2]], 'stroke-width': 1.4, opacity: 0 });
-        const c = mkEl('circle', { fill: red.capas[n[2]], stroke: '#000', 'stroke-width': 1.2, opacity: 0 });
-        const t = mkEl('text', { fill: '#e8e8e8', 'font-size': 10, 'letter-spacing': '0.1em', opacity: 0, 'paint-order': 'stroke', stroke: '#000', 'stroke-width': 3, 'stroke-linejoin': 'round' }); (t as SVGElement).style.fontFamily = 'IBM Plex Mono, monospace'; t.textContent = short(n[3]);
-        g.append(halo, c, t); gN.appendChild(g); return { halo, c, t };
-      });
-      const stageEl = stageRef.current!, mapEl = mapElRef.current!;
-      const proj = (ll: LngLat) => { const a = api.current; if (!a) return null; const r = mapEl.getBoundingClientRect(), k = r.width / (mapEl.clientWidth || 1), p = a.map.project(ll), s = stageEl.getBoundingClientRect(); return { x: r.left - s.left + p.x * k, y: r.top - s.top + p.y * k }; };
-      tickFn = () => {
-        const O = net.current.O.v, P = net.current.P.v;
-        svg.style.opacity = String(O);
-        if (orb.current.on) { const now = performance.now(); if (now > orb.current.t0 && api.current) api.current.map.setBearing(orb.current.base + ((now - orb.current.t0) / 1000) * 2.6); }
-        if (O < 0.01) return;
-        const time = gsap.ticker.time;
-        const dots = beatRef.current === 10;
-        const pos = red.nodes.map((n) => proj([n[0], n[1]]));
-        red.edges.forEach(([s, t], i) => {
-          const a = pos[s], b = pos[t]; const el = eEls[i]; if (!a || !b) return;
-          const st = eRank[i] * 0.62, pr = Math.max(0, Math.min(1, (P - st) / 0.38));
-          const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy), cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2 - len * 0.3 - 6;
-          el.setAttribute('d', 'M' + a.x + ',' + a.y + ' Q' + cx + ',' + cy + ' ' + b.x + ',' + b.y);
-          el.setAttribute('stroke-dashoffset', String(1 - pr)); el.setAttribute('opacity', dots ? '0' : String(0.62 * Math.min(1, pr * 3)));
-        });
-        pulses.forEach((pl, k) => {
-          const [s, t] = red.edges[pl.i], a = pos[s], b = pos[t]; const el = pEls[k]; if (!a || !b) return;
-          const st = eRank[pl.i] * 0.62, pr = Math.max(0, Math.min(1, (P - st) / 0.38));
-          if (pr < 0.98 || dots) { el.setAttribute('opacity', '0'); return; }
-          const u = (time * pl.sp + pl.ph) % 1, len = Math.hypot(b.x - a.x, b.y - a.y), cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2 - len * 0.3 - 6, v = 1 - u;
-          el.setAttribute('cx', String(v * v * a.x + 2 * v * u * cx + u * u * b.x)); el.setAttribute('cy', String(v * v * a.y + 2 * v * u * cy + u * u * b.y)); el.setAttribute('opacity', String(0.95 * Math.sin(u * Math.PI)));
-        });
-        // etiquetas mono de lugares reales: solo fuera de la red propia y sin chocar entre sí
-        const { W: sw, H: sh } = stageSize(); const placed: { x0: number; y0: number; x1: number; y1: number }[] = [];
-        const ccx = sw / 2, ccy = sh * 0.5, r1n = Math.min(sh * 0.2, sw * 0.17);
-        const order = red.nodes.map((_, i) => i).sort((x, y) => deg[y] - deg[x]);
-        const labelOn = new Set<number>();
-        if (dots && !mRef.current) {
-          for (const i of order) {
-            const p = pos[i]; if (!p || labelOn.size >= 8) continue;
-            const wd = red.nodes[i][3].split(' (')[0].split(' / ')[0].slice(0, 30).length * 6.8 + 14, box = { x0: p.x + 8, y0: p.y - 8, x1: p.x + 8 + wd, y1: p.y + 8 };
-            if (((p.x - ccx) / (r1n * 0.87 + 270)) ** 2 + ((p.y - ccy) / (r1n * 1.9 + 40)) ** 2 < 1 || box.x1 > sw - 20 || box.x0 < 10 || p.y < 80 || p.y > sh - 120) continue;
-            if (box.x0 < 330 && p.y < 90) continue;
-            if (placed.some((q) => box.x0 < q.x1 + 6 && box.x1 > q.x0 - 6 && box.y0 < q.y1 + 4 && box.y1 > q.y0 - 4)) continue;
-            placed.push(box); labelOn.add(i);
-          }
-        }
-        nEls.forEach((n, i) => {
-          const p = pos[i]; if (!p) return;
-          n.t.setAttribute('x', String(p.x + 9)); n.t.setAttribute('y', String(p.y + 3.5)); n.t.setAttribute('opacity', labelOn.has(i) ? '0.95' : '0');
-          const vis = dots ? (labelOn.has(i) ? 0.9 : 0) : Math.max(0, Math.min(1, (P - nRank[i] * 0.62) / 0.12)), r = (3 + Math.min(deg[i], 12) * 0.42) * (0.6 + 0.4 * vis);
-          const pulse = 1 + 0.16 * Math.sin(time * 2.2 + i);
-          n.c.setAttribute('cx', String(p.x)); n.c.setAttribute('cy', String(p.y)); n.c.setAttribute('r', String(r * pulse)); n.c.setAttribute('opacity', String(vis));
-          n.halo.setAttribute('cx', String(p.x)); n.halo.setAttribute('cy', String(p.y));
-          if (!dots && deg[i] >= 5) { const q = (time * 0.6 + i * 0.3) % 1; n.halo.setAttribute('r', String(r * (1.4 + q * 2.4))); n.halo.setAttribute('opacity', String(vis * 0.65 * (1 - q))); } else n.halo.setAttribute('opacity', '0');
-        });
-      };
-      gsap.ticker.add(tickFn);
-    }).catch(() => undefined);
-    return () => { dead = true; if (tickFn) gsap.ticker.remove(tickFn); svg.replaceChildren(); net.current.red = null; };
-  }, [mapReady]);
-
   // ---------- elementos y conexiones
   useEffect(() => {
     applyLayout(beat);
     CONNS.forEach((c) => {
       const s = cs.current[c.id]; if (!s) return;
       const on = c.show(beat), rm = reduced();
-      gsap.killTweensOf(s, 'p');
       gsap.to(s, { p: on ? 1 : 0, duration: rm ? 0 : on ? 1.1 : 0.5, delay: rm ? 0 : on ? c.delay(beat) : 0, ease: 'power2.inOut', overwrite: 'auto' });
       gsap.to(s, { op: c.op(beat), duration: rm ? 0 : 0.8, overwrite: false });
     });
-    if (beat < 3 || beat > 7) setSelP(null);
-    const fin = beat === 11, rmo = reduced();
-    gsap.to(net.current.O, { v: fin ? 1 : beat === 10 ? 0.9 : 0, duration: rmo ? 0 : 0.9, overwrite: true });
-    gsap.to(net.current.P, { v: fin ? 1 : 0, duration: rmo ? 0 : fin ? 7 : 0.4, delay: rmo ? 0 : fin ? 1.6 : 0, ease: 'power2.inOut', overwrite: true });
-    // título por letras y contadores
-    const lt = stageRef.current ? Array.from(stageRef.current.querySelectorAll('.ltr')) : [];
-    if (fin) gsap.fromTo(lt, { y: 54, opacity: 0, filter: 'blur(12px)' }, { y: 0, opacity: 1, filter: 'blur(0px)', duration: rmo ? 0 : 1.2, ease: 'power3.out', stagger: rmo ? 0 : 0.05, delay: rmo ? 0 : 0.7, overwrite: true });
-    else gsap.set(lt, { opacity: 0, y: 54 });
-    const nums = stageRef.current ? Array.from(stageRef.current.querySelectorAll('.stat')) as HTMLElement[] : [];
-    nums.forEach((el) => {
-      const target = +(el.dataset.v ?? 0), o = { v: 0 };
-      if (fin) gsap.to(o, { v: target, duration: rmo ? 0 : 2.4, delay: rmo ? 0 : 2.2, ease: 'power2.out', onUpdate: () => { el.textContent = String(Math.round(o.v)); }, overwrite: true });
-      else el.textContent = '0';
-    });
+    if (beat < 3 || beat > 6) setSelP(null);
   }, [beat]);
 
   useEffect(() => { applyLayout(beatRef.current, false, true); }, [selP]);
@@ -614,14 +479,13 @@ export default function Conclusion() {
       for (const c of CONNS) {
         const st = cs.current[c.id], p = paths.current[c.id];
         if (!st || !p || !p.base || !p.flow) continue;
-        if (st.p < 0.002) { p.base.style.opacity = '0'; p.flow.style.opacity = '0'; if (p.trav) p.trav.style.opacity = '0'; continue; }
+        if (st.p < 0.002) { p.base.style.opacity = '0'; p.flow.style.opacity = '0'; continue; }
         const a = pt(c.a), b = pt(c.b);
         if (!a || !b || !Number.isFinite(a.x + a.y + b.x + b.y)) { p.base.style.opacity = '0'; p.flow.style.opacity = '0'; continue; }
         a.x -= sr.left; a.y -= sr.top; b.x -= sr.left; b.y -= sr.top;
         const d = c.bulge !== undefined ? Qb(a, b, c.bulge) : Sh(a, b);
         const sel = selRef.current && ((selRef.current === 'p1' && c.id === 'cv') || (selRef.current === 'p4' && (c.id === 'ch' || c.id === 'ce')) || (selRef.current === 'p3' && c.id === 'cb') || (selRef.current === 'p2' && c.id === 'cp'));
         p.base.setAttribute('d', d); p.flow.setAttribute('d', d);
-        if (p.trav) { p.trav.setAttribute('d', d); p.trav.style.opacity = st.p > 0.98 ? String(Math.min(1, st.op + 0.15)) : '0'; }
         const solid = c.style === 'solid';
         p.base.style.strokeDashoffset = String(1 - st.p);
         p.base.style.opacity = String(solid ? st.op : st.op * 0.18);
@@ -636,7 +500,7 @@ export default function Conclusion() {
   }, []);
 
   const cap = CAPTIONS[beat];
-  const selCard = [...PRESS.map((p) => ({ id: p.id, title: p.title, ev: p.ev as string, color: p.color, note: p.note })), ...CAPS.map((c) => ({ id: c.id, title: c.title, ev: 'EXISTENTE', color: c.color, note: c.note }))].find((p) => p.id === selP);
+  const selCard = PRESS.find((p) => p.id === selP);
   const mapTop = 0;
 
   const EvBadge = ({ ev }: { ev: string }) => (
@@ -644,7 +508,6 @@ export default function Conclusion() {
       <i style={{ width: 7, height: 7, borderRadius: '50%', background: EVID_COLOR[ev as keyof typeof EVID_COLOR], display: 'inline-block' }} />{ev}
     </span>
   );
-  const red0 = { nodos: 58, relaciones: 383, capas: 8, visibles: 76 };
   const wordSize = m ? 'clamp(26px,8vw,52px)' : 'clamp(34px,5.2vw,92px)';
 
   return (
@@ -657,14 +520,11 @@ export default function Conclusion() {
           <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: '16vh', background: 'linear-gradient(rgba(0,0,0,0), #000)' }} />
         </div>
 
-        <svg ref={netRef} id="net" aria-hidden />
         <svg id="links" aria-hidden>
-          {CONNS.map((c, ci) => (
+          {CONNS.map((c) => (
             <g key={c.id}>
-              <path ref={(n) => { paths.current[c.id] = { ...(paths.current[c.id] ?? { flow: null, trav: null }), base: n }; }} pathLength={1} stroke={c.color} strokeDasharray="1" strokeDashoffset="1" strokeWidth={c.w} opacity={0} />
-              <path ref={(n) => { paths.current[c.id] = { ...(paths.current[c.id] ?? { base: null, trav: null }), flow: n }; }} className="flow" stroke={c.color} strokeWidth={c.w * 1.9} opacity={0} />
-              <path ref={(n) => { paths.current[c.id] = { ...(paths.current[c.id] ?? { base: null, flow: null }), trav: n }; }} className="trav" pathLength={1} stroke="#ffffff" strokeWidth={c.w * 2.4} opacity={0}
-                style={{ ['--dur' as string]: 2.2 + (ci % 5) * 0.38 + 's', ['--dl' as string]: '-' + ((ci * 0.53) % 3).toFixed(2) + 's', filter: 'drop-shadow(0 0 5px ' + c.color + ')' } as React.CSSProperties} />
+              <path ref={(n) => { paths.current[c.id] = { ...(paths.current[c.id] ?? { flow: null }), base: n }; }} pathLength={1} stroke={c.color} strokeDasharray="1" strokeDashoffset="1" strokeWidth={c.w} opacity={0} />
+              <path ref={(n) => { paths.current[c.id] = { ...(paths.current[c.id] ?? { base: null }), flow: n }; }} className="flow" stroke={c.color} strokeWidth={c.w * 1.9} opacity={0} />
             </g>
           ))}
         </svg>
@@ -702,43 +562,72 @@ export default function Conclusion() {
           <p className="node-title" style={{ fontWeight: 400, fontSize: 'clamp(14px,1.25vw,19px)', color: '#d4d4d4', lineHeight: 1.5 }}>Proteger los humedales no consiste únicamente en delimitar sus bordes, sino también en comprender y gestionar las dinámicas que afectan su funcionamiento.</p>
         </div>
 
-        {/* 3-9. redes: mismo lenguaje premium, ancladas a puntos reales del mapa */}
-        <Diagram spec={PRESS_SPEC} active={beat >= 3 && beat <= 6} beat={beat} W={size.W} H={size.H} m={m} project={projCorab} emph={emphPress} selected={selP} onSelect={(id) => setSelP((s) => (s === id ? null : id))} />
-        <Diagram spec={CAP_SPEC} active={beat === 7} beat={beat} W={size.W} H={size.H} m={m} project={projMid} emph={emphAll} selected={selP} onSelect={(id) => setSelP((s) => (s === id ? null : id))} />
-        <Diagram spec={WET_SPEC} active={beat === 9} beat={beat} W={size.W} H={size.H} m={m} project={projWet} emph={emphAll} selected={null} onSelect={() => undefined} />
+        {/* 3. propagación de presiones */}
+        {PRESS.map((p, i) => {
+          const Ic = PRESS_ICONS[i];
+          return (
+            <div key={p.id} ref={reg(p.id)} className="abs node" onClick={() => setSelP((s) => (s === p.id ? null : p.id))} style={{ ...cv(p.color), width: m ? '45vw' : 'min(20vw,290px)', cursor: 'pointer', outline: selP === p.id ? '2px solid #fff' : 'none' }}>
+              <div className="wm"><Ic /></div>
+              <div className="tile"><Ic /></div>
+              <div className="txt">
+                <EvBadge ev={p.ev} />
+                <p className="lb">{p.title}</p>
+              </div>
+            </div>
+          );
+        })}
+        <div ref={reg('hubW')} className="abs chip" style={{ whiteSpace: 'nowrap' }}>Humedales</div>
 
-        {/* 7. red propia premium */}
-        <RedPremium active={beat === 10} W={size.W} H={size.H} m={m} />
+        {/* 5. capacidades */}
+        {CAPS.map((c, i) => {
+          const Ic = CAP_ICONS[i];
+          return (
+            <div key={c.id} ref={reg(c.id)} className="abs node" style={{ ...cv(c.color), width: m ? '44vw' : 'min(21vw,300px)' }}>
+              <div className="wm"><Ic /></div>
+              <div className="tile"><Ic /></div>
+              <div className="txt"><p className="id">CAPACIDAD</p><p className="lb">{c.title}</p></div>
+            </div>
+          );
+        })}
+        {INTERD.map((c, i) => {
+          const Ic = INT_ICONS[i];
+          return (
+            <div key={c.id} ref={reg(c.id)} className="abs node" style={{ ...cv(c.color), width: m ? '44vw' : 'min(20vw,280px)' }}>
+              <div className="wm"><Ic /></div>
+              <div className="tile"><Ic /></div>
+              <div className="txt"><p className="id">RELACIÓN</p><p className="lb">{c.title}</p></div>
+            </div>
+          );
+        })}
+
+        {/* 7. red propia integrada (conectografía) */}
+        <div ref={reg('hubR')} className="abs chip" style={{ fontSize: 'clamp(12px,1.2vw,17px)', padding: '10px 22px', borderColor: '#ebe5d9', whiteSpace: 'nowrap' }}>Nuestra red propia</div>
+        <div ref={reg('subR')} className="abs text-center" style={{ width: m ? '78vw' : '30vw', pointerEvents: 'none' }}>
+          <p className="node-title" style={{ fontWeight: 400, fontSize: 'clamp(12px,1vw,15px)', color: '#cfcfcf' }}>Una herramienta para comprender las interdependencias entre personas, infraestructura y ecosistemas.</p>
+        </div>
+        {SYSTEMS.map((s, i) => {
+          const Ic = SYS_ICONS[i];
+          return (
+            <div key={s.id} ref={reg(s.id)} className="abs node solid big" style={{ ...cv(s.color, i === 0 ? '#ffffff' : '#0a0a0a'), width: m ? '44vw' : 'min(24vw,340px)' }}>
+              <div className="wm"><Ic /></div>
+              <div className="tile"><Ic /></div>
+              <div className="txt"><p className="id">SISTEMA</p><p className="lb">{s.title}</p>{!m && <p className="id" style={{ lineHeight: 1.35 }}>{s.desc}</p>}</div>
+            </div>
+          );
+        })}
+        {SYSTEMS.flatMap((s) => s.comps.map((c) => ({ c, color: s.color }))).map((x, i) => (
+          <div key={'c' + i} ref={reg('c' + i)} className="abs chip" style={{ borderColor: x.color, color: x.color, fontSize: 'clamp(9.5px,0.8vw,12px)', padding: '5px 12px', whiteSpace: 'nowrap' }}>{x.c}</div>
+        ))}
 
         {/* 8. conclusión */}
-        <div ref={reg('fin')} className="abs text-center" style={{ pointerEvents: 'none', width: '94vw' }}>
-          <h2 className="title-main" style={{ fontSize: m ? 'clamp(20px,6.6vw,40px)' : 'clamp(26px,3.9vw,70px)', letterSpacing: '0.08em', textShadow: '0 0 40px rgba(0,0,0,0.9)' }} aria-label="Kennedy como sistema vivo">
-            {'Kennedy como sistema vivo'.split(' ').map((w, wi) => (
-              <span key={wi} style={{ display: 'inline-block', whiteSpace: 'nowrap', marginRight: '0.32em' }} aria-hidden>
-                {w.split('').map((ch, ci) => <span key={ci} className="ltr" style={{ display: 'inline-block', opacity: 0 }}>{ch}</span>)}
-              </span>
-            ))}
-          </h2>
+        <div ref={reg('fin')} className="abs text-center" style={{ pointerEvents: 'none', width: '92vw' }}>
+          <h2 className="title-main" style={{ fontSize: m ? 'clamp(26px,8.4vw,52px)' : 'clamp(32px,5vw,88px)', letterSpacing: '0.1em' }}>Kennedy como sistema vivo</h2>
         </div>
         <div ref={reg('finSub')} className="abs text-center" style={{ width: m ? '84vw' : '40vw', pointerEvents: 'none' }}>
-          <p className="node-title" style={{ fontWeight: 400, fontSize: 'clamp(14px,1.3vw,20px)', color: '#e0e0e0', textShadow: '0 0 18px #000' }}>Comprender sus relaciones para orientar su transformación.</p>
-        </div>
-        <div ref={reg('stats')} className="abs text-center" style={{ pointerEvents: 'none' }}>
-          <div className="flex items-end justify-center" style={{ gap: m ? 22 : 44 }}>
-            {[['nodos', red0.nodos], ['relaciones', red0.relaciones], ['capas', red0.capas]].map(([l, v]) => (
-              <div key={l as string}>
-                <b className="stat title-main" data-v={v as number} style={{ fontSize: m ? 24 : 'clamp(24px,2.6vw,44px)', fontWeight: 300, display: 'block' }}>0</b>
-                <span className="kicker">{l}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div ref={reg('noteN')} className="abs" style={{ pointerEvents: 'none', background: 'rgba(0,0,0,0.85)', border: '1px solid #383838', borderRadius: 12, padding: '10px 14px', width: m ? '86vw' : 'min(23vw,290px)' }}>
-          <p className="kicker" style={{ marginBottom: 4 }}>Red del proyecto</p>
-          <p style={{ fontSize: 11.5, color: '#d0d0d0', lineHeight: 1.45 }}>Se muestran las {red0.visibles} relaciones de mayor peso entre los {red0.nodos} nodos. Cada color es una capa territorial.</p>
+          <p className="node-title" style={{ fontWeight: 400, fontSize: 'clamp(14px,1.3vw,20px)', color: '#d4d4d4' }}>Comprender sus relaciones para orientar su transformación.</p>
         </div>
         <div ref={reg('cta')} className="abs text-center" style={{ pointerEvents: 'none' }}>
-          <a className="btn-ghost pri shine" href="../pot-kennedy-mapa.html" style={{ pointerEvents: beat === 11 ? 'auto' : 'none', height: 46, padding: '0 22px', fontSize: 13 }}>Explorar red completa →</a>
+          <a className="btn-ghost pri" href="../pot-kennedy-mapa.html" style={{ pointerEvents: beat === 11 ? 'auto' : 'none' }}>Explorar red completa →</a>
         </div>
 
         {/* leyendas y pie de texto */}
@@ -764,7 +653,7 @@ export default function Conclusion() {
           <p style={{ fontSize: 11.5, color: '#d0d0d0', lineHeight: 1.45 }}>Representan flujos de abastecimiento y transporte hacia la central. No son rutas reales ni volúmenes medidos.</p>
         </div>
         <div ref={reg('cap')} className="abs text-center" style={{ width: m ? '88vw' : '38vw', pointerEvents: 'none', background: 'rgba(0,0,0,0.88)', border: '1px solid #383838', borderRadius: 14, padding: '12px 18px' }}>
-          {selCard && beat >= 3 && beat <= 7 ? (
+          {selCard && beat >= 3 && beat <= 6 ? (
             <p className="node-title" style={{ fontWeight: 400, fontSize: 'clamp(13px,1.1vw,17px)' }}>
               <span className="kicker block" style={{ color: selCard.color }}>{selCard.title} · {selCard.ev}</span>{selCard.note}
             </p>
