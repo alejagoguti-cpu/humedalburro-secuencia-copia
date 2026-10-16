@@ -27,13 +27,13 @@ const T = (x: number, y: number, o = 1, s = 1, d = 0): St => ({ x, y, o, s, d })
 
 function layout(b: number, m: boolean): Record<string, St> {
   const L: Record<string, St> = {};
-  const dim = b >= 9 ? 0.3 : 1;
+  const dim = b >= 9 ? 0 : 1;
   const hy = m ? 0.305 : 0.255;
   // título
-  L.title = b === 0 ? T(0.5, 0.5, 1, 1) : T(0.5, m ? 0.055 : 0.07, b >= 9 ? 0.35 : 1, m ? 0.5 : 0.3);
+  L.title = b === 0 ? T(0.5, 0.5, 1, 1) : b >= 9 ? T(0.5, -0.04, 0, m ? 0.5 : 0.3) : T(0.5, m ? 0.055 : 0.07, 1, m ? 0.5 : 0.3);
   L.hint = b === 0 ? T(0.5, m ? 0.62 : 0.64, 0.9, 1, 1.4) : T(0.5, m ? 0.62 : 0.64, 0);
   // dos ejes
-  L.ejes = b === 0 ? T(0.5, 0.5, 0, 0.94) : b === 1 ? T(0.5, m ? 0.27 : 0.31, 1, 1, 0.55) : T(0.5, m ? 0.125 : 0.172, b >= 9 ? 0.35 : 1, 1);
+  L.ejes = b === 0 ? T(0.5, 0.5, 0, 0.94) : b === 1 ? T(0.5, m ? 0.27 : 0.31, 1, 1, 0.55) : b >= 9 ? T(0.5, -0.02, 0, 1) : T(0.5, m ? 0.125 : 0.172, 1, 1);
   if (b === 0) {
     L.axR = T(0.5, 0.5, 0, 0.94);
     L.axL = T(0.5, 0.5, 0, 0.94);
@@ -41,22 +41,22 @@ function layout(b: number, m: boolean): Record<string, St> {
     L.axR = T(m ? 0.5 : 0.77, m ? 0.5 : 0.52, 1, 1, 1.15);
     L.axL = T(m ? 0.5 : 0.23, m ? 0.68 : 0.52, 1, 1, 1.15);
   } else {
-    L.axR = T(m ? 0.76 : 0.84, m ? 0.2 : 0.15, b >= 9 ? 0.35 : 1, 1);
-    L.axL = T(m ? 0.24 : 0.16, m ? 0.2 : 0.15, b >= 9 ? 0.35 : 1, 1);
+    L.axR = T(m ? 0.76 : 0.84, b >= 9 ? -0.02 : m ? 0.2 : 0.15, b >= 9 ? 0 : 1, 1);
+    L.axL = T(m ? 0.24 : 0.16, b >= 9 ? -0.02 : m ? 0.2 : 0.15, b >= 9 ? 0 : 1, 1);
   }
   // encabezados de secuencia
   L.hVivo = b >= 3 && b <= 7 ? T(0.5, hy, 1, 1, 0.35) : T(0.5, hy, 0, 0.98);
   L.hRel = b === 8 ? T(0.5, hy, 1, 1, 0.35) : T(0.5, hy, 0, 0.98);
-  L.hRed = b >= 9 ? T(0.5, hy, 1, 1, 0.35) : T(0.5, hy, 0, 0.98);
+  L.hRed = b >= 9 ? T(0.5, m ? 0.2 : 0.17, 1, 1, 0.5) : T(0.5, m ? 0.2 : 0.17, 0, 0.98);
   // dinámicas
   const dp = m ? [[0.25, 0.44], [0.75, 0.44], [0.25, 0.88], [0.75, 0.88]] : [[0.15, 0.52], [0.85, 0.52], [0.15, 0.8], [0.85, 0.8]];
   DYNS.forEach((d, i) => { L[d.id] = b >= 4 + i ? T(dp[i][0], dp[i][1], dim, 1, 0.1) : T(dp[i][0], dp[i][1], 0, 0.96); });
   // red propia
-  L.hub = b >= 9 ? T(0.5, m ? 0.56 : 0.585, 1, 1, 0.35) : T(0.5, 0.585, 0, 0.96);
-  const cp = m ? [[0.2, 0.8], [0.5, 0.8], [0.8, 0.8]] : [[0.26, 0.835], [0.5, 0.835], [0.74, 0.835]];
+  L.hub = b >= 9 ? T(0.5, m ? 0.4 : 0.42, 1, 1, 0.5) : T(0.5, m ? 0.4 : 0.42, 0, 0.96);
+  const cp = m ? [[0.5, 0.54], [0.5, 0.65], [0.5, 0.76]] : [[0.2, 0.64], [0.5, 0.64], [0.8, 0.64]];
   COMPONENTS.forEach((c, i) => { L[c.id] = b >= 9 ? T(cp[i][0], cp[i][1], 1, 1, 0.9 + i * 0.35) : T(cp[i][0], cp[i][1], 0, 0.96); });
   L.caption = b === 8 ? T(0.5, m ? 0.88 : 0.875, 1, 1, 2) : T(0.5, m ? 0.88 : 0.875, 0);
-  L.cta = b === 10 ? T(0.5, m ? 0.9 : 0.93, 1, 1, 1.5) : T(0.5, m ? 0.9 : 0.93, 0);
+  L.cta = b === 10 ? T(0.5, m ? 0.88 : 0.82, 1, 1, 1.2) : T(0.5, m ? 0.88 : 0.82, 0);
   return L;
 }
 
@@ -67,13 +67,13 @@ interface Conn {
   show: (b: number) => boolean; op: (b: number) => number; delay: (b: number) => number;
 }
 const CONNS: Conn[] = [
-  { id: 'tv', kind: 'title', a: 'el:title', b: 'el:ejes', color: COLORS.ink, w: 1, show: (b) => b >= 1, op: (b) => (b >= 9 ? 0.3 : 0.9), delay: () => 0.35 },
-  { id: 'axR', kind: 'axes', a: 'el:ejes', b: 'el:axR', color: COLORS.ink, w: 1, show: (b) => b >= 1, op: (b) => (b >= 9 ? 0.3 : 0.85), delay: (b) => (b === 1 ? 1 : 0.2) },
-  { id: 'axL', kind: 'axes', a: 'el:ejes', b: 'el:axL', color: COLORS.ink, w: 1, show: (b) => b >= 1, op: (b) => (b >= 9 ? 0.3 : 0.85), delay: (b) => (b === 1 ? 1 : 0.2) },
+  { id: 'tv', kind: 'title', a: 'el:title', b: 'el:ejes', color: COLORS.ink, w: 1, show: (b) => b >= 1 && b < 9, op: () => 0.9, delay: () => 0.35 },
+  { id: 'axR', kind: 'axes', a: 'el:ejes', b: 'el:axR', color: COLORS.ink, w: 1, show: (b) => b >= 1 && b < 9, op: () => 0.85, delay: (b) => (b === 1 ? 1 : 0.2) },
+  { id: 'axL', kind: 'axes', a: 'el:ejes', b: 'el:axL', color: COLORS.ink, w: 1, show: (b) => b >= 1 && b < 9, op: () => 0.85, delay: (b) => (b === 1 ? 1 : 0.2) },
   { id: 'kR', kind: 'kennedy', a: 'el:axR', b: 'kennedy', color: COLORS.coral, w: 1.2, show: (b) => b === 2, op: () => 0.9, delay: () => 0.8 },
   { id: 'kL', kind: 'kennedy', a: 'el:axL', b: 'kennedy', color: COLORS.coral, w: 1.2, show: (b) => b === 2, op: () => 0.9, delay: () => 0.8 },
-  ...DYNS.map((d, i): Conn => ({ id: 'loc' + (i + 1), kind: 'loc', a: 'el:' + d.id, b: 'place:' + d.place, color: d.color, w: 1.4, show: (b) => b >= 4 + i, op: (b) => (b >= 9 ? 0.3 : b >= 8 ? 0.55 : 0.95), delay: () => 0.55 })),
-  ...RELS.map((r, i): Conn => ({ id: r.id, kind: 'rel', a: 'el:' + r.a, b: 'el:' + r.b, color: '#ffffff', w: 2, bulge: [-70, 46, 56, 56][i], show: (b) => b >= 8, op: (b) => (b >= 9 ? 0.3 : 1), delay: () => 0.5 + i * 0.5 })),
+  ...DYNS.map((d, i): Conn => ({ id: 'loc' + (i + 1), kind: 'loc', a: 'el:' + d.id, b: 'place:' + d.place, color: d.color, w: 1.4, show: (b) => b >= 4 + i && b < 9, op: (b) => (b >= 8 ? 0.4 : 0.95), delay: () => 0.55 })),
+  ...RELS.map((r, i): Conn => ({ id: r.id, kind: 'rel', a: 'el:' + r.a, b: 'el:' + r.b, color: '#ffffff', w: 2, bulge: [-70, 46, 56, 56][i], show: (b) => b >= 8 && b < 9, op: () => 1, delay: () => 0.5 + i * 0.5 })),
   ...COMPONENTS.map((c, i): Conn => ({ id: 'hub' + (i + 1), kind: 'hub', a: 'el:hub', b: 'el:' + c.id, color: COLORS.ink, w: 1.1, show: (b) => b >= 9, op: () => 0.9, delay: () => 0.9 + i * 0.35 })),
 ];
 
@@ -290,7 +290,7 @@ export default function App() {
       addMk('porvenir', ctr('UPL15'), 'Porvenir', 'upl', COLORS.mut, 'center');
       addMk('patiob', ctr('UPL14'), 'Patio Bonito', 'upl', COLORS.mut, 'center');
       DYNS.forEach((d) => addMk(d.place, PLACES[d.place].lngLat, PLACES[d.place].name, 'pulse', d.color));
-      api.current = { map, bogota, kennedy, cluster, markers, kennedyCenter: kc, hl: { v: 0 }, three: { ready: false, on: false, k: { v: 0 } } };
+      api.current = { map, bogota, kennedy, cluster, markers, kennedyCenter: [(cluster[0] + cluster[2]) / 2, (cluster[1] + cluster[3]) / 2] as LngLat, hl: { v: 0 }, three: { ready: false, on: false, k: { v: 0 } } };
       (window as unknown as { __map: maplibregl.Map }).__map = map; // utilidad de depuración
       map.on('load', () => {
         if (dead) return;
@@ -313,8 +313,8 @@ export default function App() {
   const setHl = (v: number, dur: number) => {
     const a = api.current; if (!a) return;
     gsap.to(a.hl, { v, duration: reduced() ? 0 : dur, ease: 'power2.out', onUpdate: () => {
-      a.map.setPaintProperty('kennedy-fill', 'fill-opacity', a.hl.v * (0.3 - 0.2 * a.three.k.v));
-      a.map.setPaintProperty('kennedy-line', 'line-opacity', a.hl.v);
+      a.map.setPaintProperty('kennedy-fill', 'fill-opacity', a.hl.v * 0.3 * (1 - a.three.k.v));
+      a.map.setPaintProperty('kennedy-line', 'line-opacity', a.hl.v * (1 - a.three.k.v));
     } });
   };
   const showMk = (ids: string[]) => {
@@ -333,7 +333,10 @@ export default function App() {
     m3.setPaintProperty('parques-fill', 'fill-opacity', 0.85 * f);
     m3.setPaintProperty('agua-fill', 'fill-opacity', 0.9 * f);
     m3.setPaintProperty('vias-line', 'line-opacity', 0.75 * f);
-    m3.setPaintProperty('kennedy-fill', 'fill-opacity', a.hl.v * (0.3 - 0.2 * k));
+    m3.setPaintProperty('kennedy-fill', 'fill-opacity', a.hl.v * 0.3 * (1 - k));
+    m3.setPaintProperty('kennedy-line', 'line-opacity', a.hl.v * (1 - k));
+    m3.setPaintProperty('upl-line', 'line-opacity', 1 - 0.8 * k);
+    m3.setPaintProperty('near-fill', 'fill-opacity', 1 - 0.8 * k);
   };
   const to3D = (on: boolean, instant = false) => {
     const a = api.current; if (!a) return;
@@ -377,10 +380,10 @@ export default function App() {
         later(() => { setHl(1, 1.4); showMk(['kennedy', 'tintal', 'porvenir', 'patiob']); }, 2000);
         later(() => flyCenter(13.1, 3200), 3600);
         later(() => to3D(true), 4800);
-        later(() => showMk(['kennedy', 'tintal', 'porvenir', 'patiob', 'corabastos', 'burro']), 6600);
+        later(() => showMk(['tintal', 'porvenir', 'patiob', 'corabastos', 'burro']), 6600);
       } else {
         setHl(1, 0.5); flyCenter(13.1, 2200); to3D(true);
-        showMk(['kennedy', 'tintal', 'porvenir', 'patiob', 'corabastos', 'burro']);
+        showMk(['tintal', 'porvenir', 'patiob', 'corabastos', 'burro']);
       }
     } else {
       setHl(1, 0.5);
@@ -540,7 +543,7 @@ export default function App() {
         {COMPONENTS.map((c, i) => {
           const Ic = COMP_ICONS[i];
           return (
-            <div key={c.id} ref={reg(c.id)} className="abs node" style={{ ...cv([COLORS.mustard, COLORS.teal, COLORS.violet][i]), width: m ? '30vw' : 'min(19vw,270px)' }}>
+            <div key={c.id} ref={reg(c.id)} className="abs node" style={{ ...cv([COLORS.mustard, COLORS.teal, COLORS.violet][i]), width: m ? '72vw' : 'min(24vw,330px)' }}>
               <div className="wm"><Ic /></div>
               <div className="tile"><Ic /></div>
               <div className="txt">
