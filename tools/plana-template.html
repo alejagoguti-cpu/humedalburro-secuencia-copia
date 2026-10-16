@@ -52,6 +52,10 @@ button.act{background:rgba(74,163,255,.25);border-color:#7aa2ff}
 #legend .it.off{opacity:.35}
 #legend .sw{width:11px;height:11px;border-radius:50%;flex:none}
 #legend .lg{width:18px;height:3px;border-radius:2px;flex:none}
+#legend .it b,#legend .hub b{margin-left:auto;color:var(--mut);font-weight:600;font-size:10.5px}
+#legend .it{padding:2px 4px;border-radius:6px}#legend .it:hover,#legend .hub:hover{background:rgba(120,150,255,.14)}
+#legend h4 .al{float:right;letter-spacing:0;font-weight:400}#legend h4 a{cursor:pointer;color:#7aa2ff}#legend h4 a:hover{text-decoration:underline}
+#legend .tgl{width:22px;height:12px;border-radius:99px;background:#4aa3ff;flex:none;position:relative}#legend .tgl::after{content:'';position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:#fff;transition:.2s}#legend .it.off .tgl{background:#333}#legend .it.off .tgl::after{right:12px}
 #legend hr{border:0;border-top:1px solid rgba(120,150,255,.2);margin:10px 0}
 #legend .hub{display:flex;align-items:center;gap:6px;margin:3px 0;cursor:pointer}
 #legend .hub b{margin-left:auto;color:var(--mut);font-weight:600}
@@ -92,7 +96,8 @@ const isOn=i=>!off.has(i)&&!hiddenCat.has(nodes[i].cat);
 const edgeOn=k=>{const e=edges[k];return isOn(e.s)&&isOn(e.t)&&!hiddenT.has(e.type)};
 const deg=new Array(N).fill(0);
 function recount(){deg.fill(0);edges.forEach((e,k)=>{if(edgeOn(k)){deg[e.s]++;deg[e.t]++}})}
-const radius=i=>isOn(i)?Math.min(60,17+7*Math.sqrt(deg[i])):14;
+const opts={size:true,thick:true,flow:true,rings:true};let hlCat=-1,hlType=-1;
+const radius=i=>isOn(i)?(opts.size?Math.min(60,17+7*Math.sqrt(deg[i])):26):14;
 // ---- nodos (DOM)
 const P=nodes.map((n,i)=>{const q=DATA.pos&&DATA.pos[i];return q?{x:q.x*.8,y:q.y*.8,vx:0,vy:0,r:20,tr:20}:{x:Math.cos(i*2.4)*300,y:Math.sin(i*2.4)*300,vx:0,vy:0,r:20,tr:20}});
 {let cx=0,cy=0;P.forEach(p=>{cx+=p.x;cy+=p.y});cx/=N;cy/=N;P.forEach(p=>{p.x-=cx;p.y-=cy})}
@@ -149,10 +154,10 @@ function draw(now){
  for(let i=0;i<N;i++){const p=P[i];els[i].style.transform=`translate(${p.x}px,${p.y}px)`;els[i].style.setProperty('--r',p.r.toFixed(1))}
  edges.forEach((e,k)=>{const o=E[k],on=edgeOn(k);o.g+=((on?1:0)-o.g)*.09;if(Math.abs((on?1:0)-o.g)<.01)o.g=on?1:0;
   const a=P[e.s],b=P[e.t],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d,x1=a.x+ux*(a.r+3),y1=a.y+uy*(a.r+3),x2=b.x-ux*(b.r+5),y2=b.y-uy*(b.r+5),ex=x1+(x2-x1)*o.g,ey=y1+(y2-y1)*o.g;
-  const touch=(sel>=0&&(e.s===sel||e.t===sel))||k===selEdge,dim=sel>=0&&!touch&&k!==selEdge;
+  const touch=(sel>=0&&(e.s===sel||e.t===sel))||k===selEdge,dim=(sel>=0&&!touch&&k!==selEdge)||(hlType>=0&&e.type!==hlType)||(hlCat>=0&&nodes[e.s].cat!==hlCat&&nodes[e.t].cat!==hlCat);
   for(const l of [o.ln,o.hit]){l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',ex);l.setAttribute('y2',ey)}
-  o.ln.style.opacity=o.g*(dim?.2:touch?1:.7);o.ln.setAttribute('stroke-width',touch?2.8:1.7);o.hit.classList.toggle('on',on);
-  o.ps.forEach((c,q)=>{const u=((t*70/d+o.ph+q/2)%1);c.setAttribute('cx',x1+(x2-x1)*u);c.setAttribute('cy',y1+(y2-y1)*u);c.setAttribute('opacity',o.g>.95?(dim?.1:.95):0)});
+  o.ln.style.opacity=o.g*(dim?.2:touch?1:.7);o.ln.setAttribute('stroke-width',(opts.thick?1+.9*e.w:1.7)+(touch?1.1:0));o.hit.classList.toggle('on',on);
+  o.ps.forEach((c,q)=>{const u=((t*70/d+o.ph+q/2)%1);c.setAttribute('cx',x1+(x2-x1)*u);c.setAttribute('cy',y1+(y2-y1)*u);c.setAttribute('opacity',o.g>.95&&opts.flow?(dim?.1:.95):0)});
   o.chip.classList.toggle('on',on&&touch);if(on&&touch)o.chip.style.transform=`translate(${(x1+x2)/2}px,${(y1+y2)/2}px) translate(-50%,-50%)`});
  if(autofit)fitStep();
  world.style.transform=`translate(${cam.x}px,${cam.y}px) scale(${cam.s})`;
@@ -164,13 +169,13 @@ function fitStep(){let a=1e9,b=1e9,c=-1e9,d=-1e9,n=0;for(let i=0;i<N;i++){if(!is
  const s=Math.min(1.3,(vw-padL-padR)/w,(vh-padT-padB)/h),tx=padL+((vw-padL-padR)-w*s)/2-a*s,ty=padT+((vh-padT-padB)-h*s)/2-b*s;cam.s+=(s-cam.s)*.07;cam.x+=(tx-cam.x)*.07;cam.y+=(ty-cam.y)*.07}
 // ---- acciones
 const wasOn=new Array(N).fill(true);const snapshot=()=>{for(let i=0;i<N;i++)wasOn[i]=isOn(i)};
-function changed(spawnFrom){recount();
+function changed(spawnFrom){hlCat=hlType=-1;recount();
  for(let i=0;i<N;i++){els[i].classList.toggle('off',!isOn(i));
   if(isOn(i)&&wasOn[i]===false){const nb=adj[i].map(k=>other(k,i)).filter(j=>isOn(j)&&j!==i);const src=spawnFrom!=null?P[spawnFrom]:nb.length?{x:nb.reduce((s,j)=>s+P[j].x,0)/nb.length,y:nb.reduce((s,j)=>s+P[j].y,0)/nb.length}:{x:0,y:0};P[i].x=src.x+(Math.random()-.5)*40;P[i].y=src.y+(Math.random()-.5)*40;P[i].vx=P[i].vy=0;P[i].r=8}}
  snapshot();decorate();reheat(.8);autofit=true;ui()}
-function decorate(){const act=[];for(let i=0;i<N;i++)if(isOn(i))act.push(i);act.sort((a,b)=>deg[b]-deg[a]);const hubs=new Set(act.slice(0,Math.min(4,act.length)).filter(i=>deg[i]>=4));
+function decorate(){const act=[];for(let i=0;i<N;i++)if(isOn(i))act.push(i);act.sort((a,b)=>deg[b]-deg[a]);const hubs=new Set(opts.rings?act.slice(0,Math.min(4,act.length)).filter(i=>deg[i]>=4):[]);
  for(let i=0;i<N;i++){els[i].classList.toggle('hubn',hubs.has(i));degEls[i].textContent=deg[i];
-  els[i].classList.toggle('sel',i===sel);els[i].classList.toggle('dim',sel>=0&&i!==sel&&isOn(i)&&!adj[sel].some(k=>edgeOn(k)&&other(k,sel)===i))}}
+  els[i].classList.toggle('sel',i===sel);els[i].classList.toggle('dim',(sel>=0&&i!==sel&&isOn(i)&&!adj[sel].some(k=>edgeOn(k)&&other(k,sel)===i))||(isOn(i)&&((hlCat>=0&&nodes[i].cat!==hlCat)||(hlType>=0&&!adj[i].some(k=>edgeOn(k)&&edges[k].type===hlType)))))}}
 function ripple(i){const r=document.createElement('div');r.className='ripple';r.style.left=P[i].x+'px';r.style.top=P[i].y+'px';r.style.setProperty('--c',capas[nodes[i].cat].color);world.appendChild(r);setTimeout(()=>r.remove(),1100)}
 function toggleNode(i){if(off.has(i)){off.delete(i)}else{off.add(i);if(sel===i){sel=-1;panel.classList.remove('on')}}changed()}
 function pick(i){
@@ -189,12 +194,24 @@ function showEdge(k){const e=edges[k],t=tipos[e.type];
 function ui(){
  const act=[];for(let i=0;i<N;i++)if(isOn(i))act.push(i);const ne=edges.filter((e,k)=>edgeOn(k)).length;
  const hubs=act.slice().sort((a,b)=>deg[b]-deg[a]).slice(0,5);
- $('#legend').innerHTML=`<div id="stats"><b>${act.length}</b> de ${N} actores activos<br><b>${ne}</b> relaciones · densidad <b>${act.length>1?(2*ne/(act.length*(act.length-1))).toFixed(2):'0'}</b></div>`+
- '<h4>HUBS (MÁS CONEXIONES)</h4>'+hubs.map(i=>`<div class="hub" data-n="${i}"><span class="sw" style="background:${capas[nodes[i].cat].color}"></span>${nodes[i].short.slice(0,24)}<b>${deg[i]}</b></div>`).join('')+
- '<hr><h4>CAPAS (clic para apagar)</h4>'+capas.map((c,i)=>`<div class="it ${hiddenCat.has(i)?'off':''}" data-c="${i}"><span class="sw" style="background:${c.color}"></span>${c.name}</div>`).join('')+
- '<hr><h4>TIPOS DE RELACIÓN</h4>'+tipos.map((t,i)=>`<div class="it ${hiddenT.has(i)?'off':''}" data-t="${i}"><span class="lg" style="background:${t.color}"></span>${t.name}</div>`).join('');
+ const nCat=capas.map((c,ci)=>nodes.filter((n,i)=>n.cat===ci&&isOn(i)).length), tCat=capas.map((c,ci)=>nodes.filter(n=>n.cat===ci).length);
+ const nTip=tipos.map((tp,ti)=>edges.filter((e,k)=>e.type===ti&&edgeOn(k)).length), tTip=tipos.map((tp,ti)=>edges.filter(e=>e.type===ti).length);
+ const sw=(k,txt,on)=>'<div class="it '+(on?'':'off')+'" data-o="'+k+'"><span class="tgl"></span>'+txt+'</div>';
+ $('#legend').innerHTML='<div id="stats"><b>'+act.length+'</b> de '+N+' actores activos<br><b>'+ne+'</b> relaciones · densidad <b>'+(act.length>1?(2*ne/(act.length*(act.length-1))).toFixed(2):'0')+'</b></div>'+
+ '<h4>HUBS (MÁS CONEXIONES)</h4>'+hubs.map(i=>'<div class="hub" data-n="'+i+'"><span class="sw" style="background:'+capas[nodes[i].cat].color+'"></span>'+nodes[i].short.slice(0,24)+'<b>'+deg[i]+'</b></div>').join('')+
+ '<hr><h4>CAPAS <span class="al"><a data-all="c">todas</a> · <a data-none="c">ninguna</a></span></h4>'+capas.map((c,i)=>'<div class="it '+(hiddenCat.has(i)?'off':'')+'" data-c="'+i+'" title="Clic: apagar/encender · Alt+clic: solo esta capa"><span class="sw" style="background:'+c.color+'"></span>'+c.name+'<b>'+nCat[i]+'/'+tCat[i]+'</b></div>').join('')+
+ '<hr><h4>TIPOS DE RELACIÓN <span class="al"><a data-all="t">todos</a> · <a data-none="t">ninguno</a></span></h4>'+tipos.map((tp,i)=>'<div class="it '+(hiddenT.has(i)?'off':'')+'" data-t="'+i+'" title="'+tp.def+' · Alt+clic: solo este tipo"><span class="lg" style="background:'+tp.color+'"></span>'+tp.name+'<b>'+nTip[i]+'/'+tTip[i]+'</b></div>').join('')+
+ '<hr><h4>LECTURA DEL GRÁFICO (interruptores)</h4>'+
+ sw('size','Tamaño del círculo = conexiones activas',opts.size)+sw('rings','Anillo giratorio = los 4 hubs',opts.rings)+sw('thick','Grosor de la línea = impacto (Media 1 · Alta 2 · Severa/Crítica 3)',opts.thick)+sw('flow','Puntos en movimiento = sentido origen → destino',opts.flow);
  const offs=[...off];$('#tray').innerHTML=offs.length?'<span class="t">Apagados:</span>'+offs.map(i=>`<button data-o="${i}"><i class="fa-solid fa-power-off"></i> ${nodes[i].short.slice(0,22)}</button>`).join(''):''}
-$('#legend').addEventListener('click',ev=>{const h=ev.target.closest('.hub');if(h){pick(+h.dataset.n);return}const it=ev.target.closest('.it');if(!it)return;const set=it.dataset.c!=null?hiddenCat:hiddenT,k=+(it.dataset.c!=null?it.dataset.c:it.dataset.t);set.has(k)?set.delete(k):set.add(k);changed()});
+$('#legend').addEventListener('click',ev=>{
+ const o=ev.target.closest('[data-o]');if(o){opts[o.dataset.o]=!opts[o.dataset.o];changed();return}
+ const al=ev.target.closest('a[data-all],a[data-none]');if(al){const isAll=al.dataset.all!=null,kind=al.dataset.all||al.dataset.none,set=kind==='c'?hiddenCat:hiddenT,n=kind==='c'?capas.length:tipos.length;set.clear();if(!isAll)for(let i=0;i<n;i++)set.add(i);changed();return}
+ const h=ev.target.closest('.hub');if(h){pick(+h.dataset.n);return}
+ const it=ev.target.closest('.it');if(!it)return;const isC=it.dataset.c!=null,set=isC?hiddenCat:hiddenT,k=+(isC?it.dataset.c:it.dataset.t),n=isC?capas.length:tipos.length;
+ if(ev.altKey){set.clear();for(let i=0;i<n;i++)if(i!==k)set.add(i)}else{set.has(k)?set.delete(k):set.add(k)}changed()});
+$('#legend').addEventListener('mouseover',ev=>{const it=ev.target.closest('.it[data-c],.it[data-t]');const c=it&&it.dataset.c!=null?+it.dataset.c:-1,tp=it&&it.dataset.t!=null?+it.dataset.t:-1;if(c!==hlCat||tp!==hlType){hlCat=c;hlType=tp;decorate()}});
+$('#legend').addEventListener('mouseleave',()=>{if(hlCat>=0||hlType>=0){hlCat=hlType=-1;decorate()}});
 $('#tray').addEventListener('click',ev=>{const b=ev.target.closest('button[data-o]');if(b){off.delete(+b.dataset.o);changed()}});
 // ---- arrastrar nodos / doble clic / pan y zoom
 let dragN=null,dragV=null,moved=0,lastClick=0,lastId=-1;
