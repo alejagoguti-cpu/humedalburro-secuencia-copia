@@ -699,7 +699,7 @@ $('#bPlay').onclick = () => {
       arr.forEach((k, i) => {
         if (p) {
           const out = Math.hypot(p.nx - cx, p.ny - cy) > 1 ? Math.atan2(p.ny - cy, p.nx - cx) : -Math.PI / 2, arc = net.vis.length <= 1 ? Math.PI * 2 : Math.PI * 1.7;
-          const ang = arc >= Math.PI * 2 ? out + i * Math.PI * 2 / arr.length : out - arc / 2 + (i + .5) * arc / arr.length, dist = NR(p) + NR(k) + 90;
+          const ang = arc >= Math.PI * 2 ? out + i * Math.PI * 2 / arr.length : out - arc / 2 + (i + .5) * arc / arr.length, dist = NR(p) + NR(k) + 170;
           k.nx = p.nx + Math.cos(ang) * dist; k.ny = p.ny + Math.sin(ang) * dist;
         } else if (!net.vis.length && k.d === 0) { k.nx = 0; k.ny = 0 }
         else { const a = Math.random() * 6.283, r = 60 + Math.random() * 120; k.nx = cx + Math.cos(a) * r; k.ny = cy + Math.sin(a) * r }
@@ -715,16 +715,16 @@ $('#bPlay').onclick = () => {
   function netTick() {
     const V = net.vis, a = net.alpha; if (a <= .02) return;
     for (let i = 0; i < V.length; i++) for (let j = i + 1; j < V.length; j++) {
-      const p = V[i], q = V[j]; let dx = q.nx - p.nx, dy = q.ny - p.ny; const d = Math.hypot(dx, dy) || .01, min = NR(p) + NR(q) + 44; dx /= d; dy /= d;
-      const f = 22000 / (d * d) * a + (d < min ? (min - d) * .18 : 0);
+      const p = V[i], q = V[j]; let dx = q.nx - p.nx, dy = q.ny - p.ny; const d = Math.hypot(dx, dy) || .01, min = NR(p) + NR(q) + 110; dx /= d; dy /= d;
+      const f = 90000 / (d * d) * a + (d < min ? (min - d) * .2 : 0);
       p.nvx -= dx * f; p.nvy -= dy * f; q.nvx += dx * f; q.nvy += dy * f;
     }
     net.links.forEach(l => {
       if (!l.a.nv || !l.b.nv) return;
-      let dx = l.b.nx - l.a.nx, dy = l.b.ny - l.a.ny; const d = Math.hypot(dx, dy) || .01, L = NR(l.a) + NR(l.b) + (l.x ? 240 : 110), f = (d - L) * (l.x ? .008 : .022); dx /= d; dy /= d;
+      let dx = l.b.nx - l.a.nx, dy = l.b.ny - l.a.ny; const d = Math.hypot(dx, dy) || .01, L = NR(l.a) + NR(l.b) + (l.x ? 360 : 190), f = (d - L) * (l.x ? .006 : .022); dx /= d; dy /= d;
       l.a.nvx += dx * f; l.a.nvy += dy * f; l.b.nvx -= dx * f; l.b.nvy -= dy * f;
     });
-    V.forEach(n => { n.nvx -= n.nx * .004; n.nvy -= n.ny * .004; n.nvx *= .8; n.nvy *= .8; n.nx += n.nvx; n.ny += n.nvy; netPlace(n) });
+    V.forEach(n => { n.nvx -= n.nx * .002; n.nvy -= n.ny * .002; n.nvx *= .8; n.nvy *= .8; n.nx += n.nvx; n.ny += n.nvy; netPlace(n) });
     net.alpha *= .985; netLinks();
   }
   function netFit() {
