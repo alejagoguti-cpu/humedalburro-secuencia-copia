@@ -197,6 +197,42 @@ footer button:hover{background:#171717}
 .gdot{transform-box:fill-box;transform-origin:center;animation:gdotin .6s cubic-bezier(.2,.9,.3,1.3) both}
 @keyframes gdotin{from{transform:scale(0);opacity:0}}
 .gnode.d0.intro{box-shadow:0 0 0 2px #fff,0 0 42px 6px color-mix(in srgb,var(--c) 70%,transparent)}
+/* ---- red no jerárquica (vista final) ---- */
+#net{display:none;position:fixed;inset:0;z-index:100;overflow:hidden;cursor:grab;touch-action:none;user-select:none;background:radial-gradient(ellipse 80% 60% at 50% 45%,#0c0c10 0%,#000 72%),#000}
+#net::before{content:"";position:absolute;inset:0;background-image:radial-gradient(#1d1d1d 1px,transparent 1.1px);background-size:26px 26px;pointer-events:none}
+#net.on{display:block}#net.drag{cursor:grabbing}
+#nworld{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+#nsvg{position:absolute;left:0;top:0;overflow:visible;width:1px;height:1px;pointer-events:none}
+#nbar{position:absolute;left:0;right:0;top:0;z-index:3;display:flex;align-items:center;gap:10px;padding:12px 16px;background:linear-gradient(#000 55%,rgba(0,0,0,0));pointer-events:none}
+#nbar>*{pointer-events:auto}
+#nbrand{display:flex;align-items:center;gap:12px;margin-right:auto;min-width:0}
+#nbrand .logo{width:40px;height:40px;border-radius:11px;background:#f4f4f4;color:#000;font-size:18px}
+#nbrand h1{font:700 16px var(--sans);white-space:nowrap}
+#nbrand p{font:400 10px var(--mono);letter-spacing:1.5px;color:var(--mut);margin-top:3px;text-transform:uppercase;white-space:nowrap}
+.nlk{fill:none;stroke-width:1.8;stroke-linecap:round;opacity:.5;transition:opacity .4s}
+.nlk.x{stroke-dasharray:6 6;opacity:.55;animation:gxflow 1.4s linear infinite}
+.nlk.hide{opacity:0}
+.nn{position:absolute;left:0;top:0;will-change:transform}
+.nc{position:absolute;border-radius:50%;display:grid;place-items:center;cursor:pointer;background:var(--c);color:var(--ink);transition:transform .5s cubic-bezier(.2,.9,.3,1.25),opacity .35s,box-shadow .2s}
+.nn.d0 .nc{box-shadow:0 0 44px 4px color-mix(in srgb,var(--c) 45%,transparent)}
+.nn.d2 .nc{background:#0a0a0a;color:var(--c);border:3px solid var(--c)}
+.nc:hover{transform:scale(1.08);box-shadow:0 0 22px -2px var(--c)}
+.nn.sel .nc{box-shadow:0 0 0 4px #fff,0 0 26px 2px var(--c)}
+.nl{position:absolute;width:150px;left:-75px;text-align:center;font:500 11.5px/1.2 var(--sans);color:#e8e8e8;text-shadow:0 1px 3px #000,0 0 8px #000;pointer-events:none;transition:opacity .35s,transform .5s;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.nn.d0 .nl{width:190px;left:-95px;font:700 14px/1.2 var(--sans)}.nn.d1 .nl{width:170px;left:-85px;font-weight:700;font-size:12.5px}
+.nk{position:absolute;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#000;border:1px solid var(--c);color:#fff;font:500 10px var(--mono);display:grid;place-items:center;pointer-events:none;transition:opacity .35s,transform .5s}
+.nn.open .nk{display:none}
+.nn.off{pointer-events:none}.nn.off .nc,.nn.off .nl,.nn.off .nk{opacity:0;transform:scale(.2)}
+#nhint{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);z-index:3;pointer-events:none;display:flex;align-items:center;gap:10px;font:500 11px var(--mono);letter-spacing:1.5px;text-transform:uppercase;padding:11px 16px;border:1px solid var(--line2);border-radius:30px;background:#050505;white-space:nowrap;max-width:92vw;transition:opacity .4s}
+#nhint.hide{opacity:0}
+#ninfo{position:absolute;left:50%;bottom:16px;transform:translate(-50%,14px);z-index:3;width:min(540px,calc(100vw - 24px));max-height:34vh;overflow:auto;padding:14px 16px;background:#080808;border:1px solid var(--line2);border-left:4px solid var(--c,#fff);border-radius:14px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;user-select:text;cursor:default}
+#ninfo.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#ninfo .nik{font:500 10.5px var(--mono);letter-spacing:1.2px;color:var(--mut);text-transform:uppercase}
+#ninfo h3{font:700 15px/1.25 var(--sans);margin-top:3px}
+#ninfo .nia{font:500 11px var(--mono);color:var(--mut);margin-top:6px}
+#ninfo p{font:400 13px/1.45 var(--sans);color:#cfcfcf;margin-top:7px}
+@media(max-width:600px){#nbrand p{display:none}#nbar .gb2 span{display:none}#nbar .gb2{width:40px;padding:0}#nbrand h1{font-size:14px}}
+footer .fnet{flex:1}
 @media(min-width:900px){#app{display:none}#graph{display:block}}
 </style>
 </head>
@@ -210,6 +246,7 @@ footer button:hover{background:#171717}
   <button class="gb2 pri" id="gPlay"><i class="fa-solid fa-play"></i> Propagar</button>
   <button class="gb2" id="gAll"><i class="fa-solid fa-angles-down"></i> Expandir todo</button>
   <button class="gb2" id="gReset"><i class="fa-solid fa-rotate-left"></i> Reiniciar</button>
+  <button class="gb2" id="gNet"><i class="fa-solid fa-circle-nodes"></i> Red</button>
  </div>
  <div id="gpalpop"><h5>Paleta</h5></div>
  <div id="ghint"><i class="fa-solid fa-hand-pointer"></i> Toca una tarjeta para desplegar</div>
@@ -234,7 +271,18 @@ footer button:hover{background:#171717}
  <footer>
   <button id="bAll"><i class="fa-solid fa-angles-down"></i>Expandir todo</button>
   <button id="bReset"><i class="fa-solid fa-rotate-left"></i>Reiniciar</button>
+  <button id="bNet" class="fnet"><i class="fa-solid fa-circle-nodes"></i>Red</button>
  </footer>
+</div>
+<div id="net">
+ <div id="nbar">
+  <div id="nbrand"><div class="logo"><i class="fa-solid fa-circle-nodes"></i></div><div><h1>El POT en Kennedy</h1><p>Red causal · sin jerarquía</p></div></div>
+  <button class="gb2" id="nReset" title="Reiniciar red"><i class="fa-solid fa-rotate-left"></i><span> Reiniciar</span></button>
+  <button class="gb2 pri" id="nClose" title="Volver al árbol"><i class="fa-solid fa-sitemap"></i><span> Árbol</span></button>
+ </div>
+ <div id="nworld"><svg id="nsvg"></svg></div>
+ <div id="nhint"><i class="fa-solid fa-hand-pointer"></i> Toca el fenómeno central</div>
+ <div id="ninfo"></div>
 </div>
 <script>
 // Cada nodo: t=título, a=artículos, i=explicación del guion, ic=icono (solo ramas), c=color (solo ramas), k=hijos, l=ids de ramas con las que conecta
@@ -400,7 +448,7 @@ $('#bPlay').onclick = () => {
     all.forEach(n => { if (n.el) { n.el.style.setProperty('--c', n.d <= 1 ? n.col : 'color-mix(in srgb,' + n.col + ' ' + Math.max(38, 78 - n.d * 12) + '%,#fff)') } });
     xls.forEach(x => { const t = byId[x.bid]; x.grad.children[0].setAttribute('stop-color', x.a.col); x.grad.children[1].setAttribute('stop-color', t.col); x.el.setAttribute('stroke', 'url(#xg' + xls.indexOf(x) + ')') });
     document.querySelectorAll('.pitem').forEach((p, k) => p.classList.toggle('act', k === i));
-    buildLegend(); if (sel) inspect(sel); draw();
+    buildLegend(); if (sel) inspect(sel); draw(); netColors();
   }
   const visible = n => { for (let p = n.par; p; p = p.par) if (!p.open) return false; return true };
   let pos = new Map();
@@ -614,6 +662,125 @@ $('#bPlay').onclick = () => {
     if (!introOn) return; introOn = false; ROOT.gel.classList.remove('intro');
     const g = document.getElementById('gintro'); if (g) { g.classList.add('out'); setTimeout(() => g.remove(), 600) }
   }
+
+  // ---- red no jerárquica (vista final): bolas sueltas con fuerzas.
+  // Cada clic suma el nivel siguiente y retira el anterior: blanco (centro) → colores (ramas) → borde de color (variables)
+  const nv = document.getElementById('net'), nw = document.getElementById('nworld'), nsvg = document.getElementById('nsvg'), ninfo = document.getElementById('ninfo'), nhint = document.getElementById('nhint');
+  const net = {exp: new Set(), vis: [], T: {x: 0, y: 0, k: 1}, tg: {x: 0, y: 0, k: 1}, auto: true, moving: false, alpha: 0, raf: 0, sel: null, built: false, links: []};
+  const NR = n => n.d === 0 ? 64 : n.d === 1 ? 42 : 25;
+  function netBuild() {
+    net.built = true;
+    all.forEach(n => {
+      const r = NR(n), e = document.createElement('div'), kc = (n.k || []).length;
+      e.className = 'nn off d' + Math.min(n.d, 2);
+      e.innerHTML = '<div class="nc" style="width:' + 2 * r + 'px;height:' + 2 * r + 'px;left:' + -r + 'px;top:' + -r + 'px;font-size:' + Math.round(r * .78) + 'px"><i class="fa-solid ' + n.bic + '"></i></div>'
+        + '<div class="nl" style="top:' + (r + 6) + 'px">' + esc(n.t) + '</div>'
+        + (kc ? '<span class="nk" style="left:' + Math.round(r * .55) + 'px;top:' + Math.round(r * .55) + 'px">' + kc + '</span>' : '');
+      e.addEventListener('click', ev => { ev.stopPropagation(); netClick(n) });
+      n.nel = e; n.nx = 0; n.ny = 0; n.nvx = 0; n.nvy = 0; n.nv = false; nw.appendChild(e);
+    });
+    all.forEach(n => { if (n.par) net.links.push({a: n.par, b: n, x: false}); (n.l || []).forEach(id => net.links.push({a: n, b: byId[id], x: true})) });
+    net.links.forEach(l => { l.el = mk('line', {class: 'nlk' + (l.x ? ' x' : '') + ' hide'}); nsvg.insertBefore(l.el, nsvg.firstChild) });
+  }
+  function netColors() {
+    if (!net.built) return;
+    all.forEach(n => { n.nel.style.setProperty('--c', n.col); n.nel.style.setProperty('--ink', n.ink) });
+    net.links.forEach(l => l.el.style.stroke = l.x ? l.a.col : l.b.col);
+    if (net.sel) netInfo(net.sel);
+  }
+  function netPlace(n) { n.nel.style.transform = 'translate(' + n.nx.toFixed(1) + 'px,' + n.ny.toFixed(1) + 'px)' }
+  function netUpdate() {
+    let md = 0; net.exp.forEach(n => { if (n.d > md) md = n.d });
+    const now = all.filter(n => n.d >= md && (n.d === 0 || net.exp.has(n.par))), set = new Set(now);
+    let cx = 0, cy = 0; net.vis.forEach(n => { cx += n.nx; cy += n.ny }); if (net.vis.length) { cx /= net.vis.length; cy /= net.vis.length }
+    const groups = new Map();
+    now.filter(n => !n.nv).forEach(n => { const p = n.par && n.par.nv ? n.par : null; if (!groups.has(p)) groups.set(p, []); groups.get(p).push(n) });
+    groups.forEach((arr, p) => {
+      arr.forEach((k, i) => {
+        if (p) {
+          const out = Math.hypot(p.nx - cx, p.ny - cy) > 1 ? Math.atan2(p.ny - cy, p.nx - cx) : -Math.PI / 2, arc = net.vis.length <= 1 ? Math.PI * 2 : Math.PI * 1.7;
+          const ang = arc >= Math.PI * 2 ? out + i * Math.PI * 2 / arr.length : out - arc / 2 + (i + .5) * arc / arr.length, dist = NR(p) + NR(k) + 90;
+          k.nx = p.nx + Math.cos(ang) * dist; k.ny = p.ny + Math.sin(ang) * dist;
+        } else if (!net.vis.length && k.d === 0) { k.nx = 0; k.ny = 0 }
+        else { const a = Math.random() * 6.283, r = 60 + Math.random() * 120; k.nx = cx + Math.cos(a) * r; k.ny = cy + Math.sin(a) * r }
+        k.nvx = 0; k.nvy = 0; netPlace(k);
+      });
+    });
+    all.forEach(n => { const v = set.has(n); n.nv = v; n.nel.classList.toggle('off', !v); n.nel.classList.toggle('open', net.exp.has(n)); n.nel.classList.toggle('sel', n === net.sel) });
+    net.vis = now; net.auto = true; net.alpha = 1;
+    nhint.classList.toggle('hide', net.exp.size > 0);
+    netLinks(); netLoop();
+  }
+  function netLinks() { net.links.forEach(l => { l.el.classList.toggle('hide', !(l.a.nv && l.b.nv)); l.el.setAttribute('x1', l.a.nx); l.el.setAttribute('y1', l.a.ny); l.el.setAttribute('x2', l.b.nx); l.el.setAttribute('y2', l.b.ny) }) }
+  function netTick() {
+    const V = net.vis, a = net.alpha; if (a <= .02) return;
+    for (let i = 0; i < V.length; i++) for (let j = i + 1; j < V.length; j++) {
+      const p = V[i], q = V[j]; let dx = q.nx - p.nx, dy = q.ny - p.ny; const d = Math.hypot(dx, dy) || .01, min = NR(p) + NR(q) + 44; dx /= d; dy /= d;
+      const f = 22000 / (d * d) * a + (d < min ? (min - d) * .18 : 0);
+      p.nvx -= dx * f; p.nvy -= dy * f; q.nvx += dx * f; q.nvy += dy * f;
+    }
+    net.links.forEach(l => {
+      if (!l.a.nv || !l.b.nv) return;
+      let dx = l.b.nx - l.a.nx, dy = l.b.ny - l.a.ny; const d = Math.hypot(dx, dy) || .01, L = NR(l.a) + NR(l.b) + (l.x ? 240 : 110), f = (d - L) * (l.x ? .008 : .022); dx /= d; dy /= d;
+      l.a.nvx += dx * f; l.a.nvy += dy * f; l.b.nvx -= dx * f; l.b.nvy -= dy * f;
+    });
+    V.forEach(n => { n.nvx -= n.nx * .004; n.nvy -= n.ny * .004; n.nvx *= .8; n.nvy *= .8; n.nx += n.nvx; n.ny += n.nvy; netPlace(n) });
+    net.alpha *= .985; netLinks();
+  }
+  function netFit() {
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    net.vis.forEach(n => { const r = NR(n); x0 = Math.min(x0, n.nx - r - 60); x1 = Math.max(x1, n.nx + r + 60); y0 = Math.min(y0, n.ny - r - 10); y1 = Math.max(y1, n.ny + r + 56) });
+    if (x1 < x0) return;
+    const vw = innerWidth, vh = innerHeight, tp = 70, bt = net.sel ? Math.min(190, vh * .34) : 70, w = x1 - x0, h = y1 - y0;
+    const k = Math.min(1.25, Math.max(.18, Math.min((vw - 24) / w, (vh - tp - bt) / h)));
+    net.tg = {k, x: (vw - w * k) / 2 - x0 * k, y: tp + (vh - tp - bt - h * k) / 2 - y0 * k};
+  }
+  function netApply() { nw.style.transform = 'translate(' + net.T.x + 'px,' + net.T.y + 'px) scale(' + net.T.k + ')' }
+  function netLoop() {
+    if (net.raf) return;
+    const step = () => {
+      netTick(); net.moving = false;
+      if (net.auto) { netFit(); const T = net.T, g = net.tg; T.x += (g.x - T.x) * .14; T.y += (g.y - T.y) * .14; T.k += (g.k - T.k) * .14; net.moving = Math.abs(g.x - T.x) > .5 || Math.abs(g.y - T.y) > .5 || Math.abs(g.k - T.k) > .002; netApply() }
+      net.raf = (net.alpha > .02 || net.moving) && nv.classList.contains('on') ? requestAnimationFrame(step) : 0;
+    };
+    net.raf = requestAnimationFrame(step);
+  }
+  function netInfo(n) {
+    ninfo.style.setProperty('--c', n.col);
+    const kc = (n.k || []).length, xc = (n.l || []).length;
+    ninfo.innerHTML = '<div class="nik">' + (n.d === 0 ? 'Fenómeno central' : 'VAR ' + n.id) + '</div><h3>' + esc(n.t) + '</h3>' + (n.a ? '<div class="nia">' + esc(n.a) + '</div>' : '') + (n.i ? '<p>' + esc(n.i) + '</p>' : '')
+      + ((kc || xc) ? '<div class="nia">' + (kc ? kc + ' variables salen de aquí' : '') + (kc && xc ? ' · ' : '') + (xc ? '⇄ conecta con ' + n.l.map(id => 'VAR ' + id).join(', ') : '') + '</div>' : '');
+    ninfo.classList.add('show');
+  }
+  function netClick(n) {
+    net.sel = n; netInfo(n);
+    if ((n.k || []).length) { if (net.exp.has(n)) (function c(x) { net.exp.delete(x); (x.k || []).forEach(c) })(n); else net.exp.add(n) }
+    netUpdate();
+  }
+  function netReset() {
+    net.exp.clear(); net.sel = null; net.vis = []; ninfo.classList.remove('show');
+    all.forEach(n => { n.nv = false; n.nx = 0; n.ny = 0 });
+    netUpdate();
+  }
+  function netOpen() { if (!net.built) { netBuild(); netColors() } else netColors(); nv.classList.add('on'); netReset() }
+  function netClose() { nv.classList.remove('on'); cancelAnimationFrame(net.raf); net.raf = 0 }
+  document.getElementById('gNet').onclick = netOpen; document.getElementById('bNet').onclick = netOpen;
+  document.getElementById('nReset').onclick = netReset; document.getElementById('nClose').onclick = netClose;
+  addEventListener('keydown', e => { if (e.key === 'Escape' && nv.classList.contains('on')) netClose() });
+  addEventListener('resize', () => { if (nv.classList.contains('on')) { net.auto = true; netLoop() } });
+  // arrastrar, pellizcar y rueda
+  const ptr = new Map(); let pinch = 0, moved = false;
+  nv.addEventListener('pointerdown', e => { if (e.target.closest('.nn,#nbar,#ninfo')) return; ptr.set(e.pointerId, {x: e.clientX, y: e.clientY}); moved = false; nv.setPointerCapture(e.pointerId); if (ptr.size === 2) { const [a, b] = [...ptr.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y) } });
+  nv.addEventListener('pointermove', e => {
+    const p = ptr.get(e.pointerId); if (!p) return;
+    const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY; net.auto = false;
+    if (ptr.size === 2) { const [a, b] = [...ptr.values()], d = Math.hypot(a.x - b.x, a.y - b.y), f = pinch ? d / pinch : 1, k = Math.min(2.4, Math.max(.15, net.T.k * f)), r = k / net.T.k, cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2; net.T.x = cx - (cx - net.T.x) * r; net.T.y = cy - (cy - net.T.y) * r; net.T.k = k; pinch = d; moved = true }
+    else { if (Math.abs(dx) + Math.abs(dy) > 0) moved = true; net.T.x += dx; net.T.y += dy; nv.classList.add('drag') }
+    netApply();
+  });
+  const pend = e => { ptr.delete(e.pointerId); pinch = 0; if (!ptr.size) { nv.classList.remove('drag'); if (!moved) { net.sel = null; ninfo.classList.remove('show'); all.forEach(n => n.nel && n.nel.classList.remove('sel')) } } };
+  nv.addEventListener('pointerup', pend); nv.addEventListener('pointercancel', pend);
+  nv.addEventListener('wheel', e => { if (e.target.closest('#ninfo')) return; e.preventDefault(); net.auto = false; const k = Math.min(2.4, Math.max(.15, net.T.k * (e.deltaY < 0 ? 1.1 : 1 / 1.1))), r = k / net.T.k; net.T.x = e.clientX - (e.clientX - net.T.x) * r; net.T.y = e.clientY - (e.clientY - net.T.y) * r; net.T.k = k; netApply() }, {passive: false});
 
   // ---- arranque: el fenómeno central aparece y sus variables salen de él
   applyPal(0); enterIntro();
