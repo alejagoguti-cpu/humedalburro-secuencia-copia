@@ -21,9 +21,12 @@ svg#edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 .chip{position:absolute;left:0;top:0;padding:3px 10px;border-radius:99px;font-size:11px;white-space:nowrap;background:#0b0d16;border:1px solid var(--line);opacity:0;pointer-events:none;transition:opacity .25s}
 .chip.on{opacity:1}
 .nd{position:absolute;left:0;top:0;width:0;height:0;--r:24}
-.disc{position:absolute;left:0;top:0;width:calc(var(--r)*2px);height:calc(var(--r)*2px);margin:calc(var(--r)*-1px) 0 0 calc(var(--r)*-1px);border-radius:50%;display:grid;place-items:center;cursor:pointer;
- background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.14),rgba(255,255,255,.02)),#000;border:2px solid var(--c);box-shadow:0 0 14px -4px var(--c);color:var(--c);font-size:calc(var(--r)*.78px);
+.disc{position:absolute;left:0;top:0;width:calc(var(--r)*2px);height:calc(var(--r)*2px);margin:calc(var(--r)*-1px) 0 0 calc(var(--r)*-1px);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0 6%;text-align:center;cursor:pointer;
+ background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.14),rgba(255,255,255,.02)),#000;border:2px solid var(--c);box-shadow:0 0 14px -4px var(--c);color:var(--c);
  transition:opacity .45s,transform .45s cubic-bezier(.2,.9,.3,1.2),box-shadow .25s,background .25s}
+.disc>i{font-size:calc(var(--r)*.3px);line-height:1;opacity:.9}
+.tx{color:var(--txt);font-weight:600;font-size:clamp(9.5px,calc(var(--r)*.19px + 3px),14px);line-height:1.12;max-width:calc(var(--r)*1.62px);overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow-wrap:anywhere;hyphens:auto;pointer-events:none}
+.nd.sel .tx{color:#04122e}
 .disc:hover{box-shadow:0 0 26px 0 var(--c)}
 .nd.off .disc{opacity:0;transform:scale(.2);pointer-events:none}
 .nd.sel .disc{background:var(--c);color:#000;box-shadow:0 0 34px 3px var(--c)}
@@ -36,7 +39,7 @@ svg#edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 .hubring{position:absolute;inset:-8px;border-radius:50%;border:1.5px dashed var(--c);opacity:0;pointer-events:none;transition:opacity .4s}
 .nd.hubn .hubring{opacity:.85;animation:spin 16s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.deg{position:absolute;right:-5px;top:-5px;min-width:19px;height:19px;border-radius:99px;background:var(--c);color:#000;font-size:11px;font-weight:700;display:none;place-items:center;padding:0 5px;font-family:inherit;pointer-events:none}
+.deg{position:absolute;right:-4px;top:-4px;min-width:19px;height:19px;border-radius:99px;background:var(--c);color:#000;font-size:11px;font-weight:700;display:none;place-items:center;padding:0 5px;font-family:inherit;pointer-events:none}
 .nd.hubn .deg,.nd.sel .deg,.nd.hov .deg{display:grid}
 .ripple{position:absolute;border-radius:50%;border:2px solid var(--c);transform:translate(-50%,-50%);animation:rip 1s ease-out forwards;pointer-events:none}
 @keyframes rip{from{opacity:.8;width:40px;height:40px}to{opacity:0;width:360px;height:360px}}
@@ -153,6 +156,7 @@ const DATA={"capas":[{"name":"Actores institucionales","desc":"Entidades distrit
 const {capas,tipos,nodes,edges}=DATA, N=nodes.length;
 const $=s=>document.querySelector(s), world=$('#world'), svg=$('#edges'), view=$('#view'), drawer=$('#drawer');
 const NS='http://www.w3.org/2000/svg';
+const abbr=s=>{const x=s.replace(/s*(.*?)/g,'').replace(/^Flora Nativa Hub: /,'Flora: ').replace(/(de|del|la|las|los|el|y|e|en|con)s+/gi,'').trim();return x.length>34?x.slice(0,33).replace(/s+S*$/,'')+'…':x};
 const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 const wrap=s=>{if(s.length<=20)return[s];const w=s.split(' ');let best=0,bd=1e9;for(let i=1;i<w.length;i++){const a=w.slice(0,i).join(' ').length,b=w.slice(i).join(' ').length,d=Math.abs(a-b);if(d<bd){bd=d;best=i}}return best?[w.slice(0,best).join(' '),w.slice(best).join(' ')]:[s]};
 const adj=nodes.map(()=>[]);edges.forEach((e,k)=>{adj[e.s].push(k);adj[e.t].push(k)});
@@ -166,12 +170,12 @@ const isOn=i=>!off.has(i)&&!hiddenCat.has(nodes[i].cat);
 const edgeOn=k=>{const e=edges[k];return isOn(e.s)&&isOn(e.t)&&!hiddenT.has(e.type)};
 const deg=new Array(N).fill(0);
 function recount(){deg.fill(0);edges.forEach((e,k)=>{if(edgeOn(k)){deg[e.s]++;deg[e.t]++}})}
-const radius=i=>isOn(i)?(opts.size?Math.min(66,22+8.5*Math.sqrt(deg[i])):30):14;
+const radius=i=>isOn(i)?(opts.size?Math.min(78,36+7*Math.sqrt(deg[i])):44):14;
 // ---- nodos
 const P=nodes.map((n,i)=>{const q=DATA.pos&&DATA.pos[i];return q?{x:q.x*.8,y:q.y*.8,vx:0,vy:0,r:20,tr:20}:{x:Math.cos(i*2.4)*300,y:Math.sin(i*2.4)*300,vx:0,vy:0,r:20,tr:20}});
 {let cx=0,cy=0;P.forEach(p=>{cx+=p.x;cy+=p.y});cx/=N;cy/=N;P.forEach(p=>{p.x-=cx;p.y-=cy})}
 const els=nodes.map((n,i)=>{const d=document.createElement('div');d.className='nd';d.style.setProperty('--c',capas[n.cat].color);
- d.innerHTML=`<div class="disc"><div class="hubring"></div><i class="fa-solid ${n.icon}"></i><span class="deg"></span></div><div class="lb">${wrap(n.short).join('<br>')}</div>`;
+ d.innerHTML=`<div class="disc" title="${n.name.replace(/"/g,'')}"><div class="hubring"></div><i class="fa-solid ${n.icon}"></i><span class="tx">${abbr(n.name)}</span><span class="deg"></span></div>`;
  world.appendChild(d);return d});
 const discs=els.map(d=>d.querySelector('.disc')), degEls=els.map(d=>d.querySelector('.deg'));
 // ---- aristas
@@ -186,6 +190,7 @@ const E=edges.map((e,k)=>{const col=tipos[e.type].color;
  const chip=document.createElement('div');chip.className='chip';chip.textContent=tipos[e.type].name;chip.style.color=col;world.appendChild(chip);
  return{hit,ln,ps,chip,g:0,ph:Math.random()}});
 // ---- simulación de fuerzas (sin centro fijo)
+const gyk=()=>{const asp=(innerWidth-(drawer.classList.contains('on')?400:60))/Math.max(300,innerHeight-(window.__dockH||170)-130);return Math.min(3.2,Math.max(1,asp*.95))};
 function step(){
  const act=[];for(let i=0;i<N;i++)if(isOn(i))act.push(i);
  for(let i=0;i<N;i++){P[i].tr=radius(i);P[i].r+=(P[i].tr-P[i].r)*.12}
@@ -196,7 +201,7 @@ function step(){
    const mn=pi.r+pj.r+46;if(d<mn){const f=(mn-d)/d*.5*Math.min(1,a*3+.3);pi.vx-=dx*f;pi.vy-=dy*f;pj.vx+=dx*f;pj.vy+=dy*f}}
   edges.forEach((e,k)=>{if(!edgeOn(k))return;const pi=P[e.s],pj=P[e.t];const dx=pj.x-pi.x,dy=pj.y-pi.y,d=Math.hypot(dx,dy)||1,L=70+pi.r+pj.r,f=(d-L)/d*.12*a;pi.vx+=dx*f;pi.vy+=dy*f;pj.vx-=dx*f;pj.vy-=dy*f});
   let cx=0,cy=0;act.forEach(i=>{cx+=P[i].x;cy+=P[i].y});if(act.length){cx/=act.length;cy/=act.length}
-  act.forEach(i=>{const p=P[i];if(p.fx!=null){p.x=p.fx;p.y=p.fy;p.vx=p.vy=0;return}p.vx=Math.max(-24,Math.min(24,(p.vx-p.x*.01*a)*.62));p.vy=Math.max(-24,Math.min(24,(p.vy-p.y*.01*a)*.62));p.x+=p.vx-cx*.05;p.y+=p.vy-cy*.05});
+  act.forEach(i=>{const p=P[i];if(p.fx!=null){p.x=p.fx;p.y=p.fy;p.vx=p.vy=0;return}p.vx=Math.max(-24,Math.min(24,(p.vx-p.x*.01*a/gyk())*.62));p.vy=Math.max(-24,Math.min(24,(p.vy-p.y*.01*gyk()*a)*.62));p.x+=p.vx-cx*.05;p.y+=p.vy-cy*.05});
   alpha*=.985;
  }else if(!untangled){untangle(act);untangled=true}
  for(let i=0;i<N;i++){if(isOn(i))continue;const nb=adj[i].map(k=>other(k,i)).filter(isOn);if(nb.length){let cx=0,cy=0;nb.forEach(j=>{cx+=P[j].x;cy+=P[j].y});P[i].x+=(cx/nb.length-P[i].x)*.05;P[i].y+=(cy/nb.length-P[i].y)*.05}}
@@ -234,7 +239,7 @@ function draw(now){
  requestAnimationFrame(draw)}
 // ---- cámara
 const cam={x:0,y:0,s:1};
-function fitStep(snap){let a=1e9,b=1e9,c=-1e9,d=-1e9,n=0;for(let i=0;i<N;i++){if(!isOn(i))continue;const p=P[i];a=Math.min(a,p.x-p.r-30);c=Math.max(c,p.x+p.r+30);b=Math.min(b,p.y-p.r-10);d=Math.max(d,p.y+p.r+40);n++}
+function fitStep(snap){let a=1e9,b=1e9,c=-1e9,d=-1e9,n=0;for(let i=0;i<N;i++){if(!isOn(i))continue;const p=P[i];a=Math.min(a,p.x-p.r-30);c=Math.max(c,p.x+p.r+30);b=Math.min(b,p.y-p.r-10);d=Math.max(d,p.y+p.r+14);n++}
  if(!n)return;const vw=innerWidth,vh=innerHeight,narrow=vw<860,drOpen=drawer.classList.contains('on')&&!narrow,
   padL=24,padR=(drOpen?376:24),padT=narrow?190:96,padB=(window.__dockH||170)+34,w=Math.max(c-a,240),h=Math.max(d-b,160);
  const s=Math.min(1.25,(vw-padL-padR)/w,(vh-padT-padB)/h),tx=padL+((vw-padL-padR)-w*s)/2-a*s,ty=padT+((vh-padT-padB)-h*s)/2-b*s;
