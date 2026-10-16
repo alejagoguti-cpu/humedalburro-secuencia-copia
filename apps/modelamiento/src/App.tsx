@@ -219,6 +219,7 @@ export default function App() {
     Object.entries(L).forEach(([id, s]) => {
       const el = els.current[id];
       if (!el) return;
+      gsap.killTweensOf(el, 'x,y,opacity,scale');
       gsap.to(el, {
         x: s.x * W, y: s.y * H, opacity: s.o, scale: s.s,
         duration: rm ? 0 : 1.15, delay: rm ? 0 : s.d, ease: 'power3.inOut', overwrite: 'auto',
@@ -236,8 +237,6 @@ export default function App() {
       if (el) gsap.set(el, { xPercent: -50, yPercent: -50, x: s.x * W, y: s.y * H, opacity: 0, scale: s.s });
     });
     CONNS.forEach((c) => { cs.current[c.id] = { p: 0, op: 0 }; });
-    if (reduced()) gsap.set(els.current.title!, { opacity: 1 });
-    else gsap.fromTo(els.current.title!, { opacity: 0, y: '+=14' }, { opacity: 1, y: '-=14', duration: 1.8, ease: 'power2.out', delay: 0.2 });
     gsap.to(els.current.hint!, { opacity: 0.9, duration: 1, delay: 1.6 });
   }, []);
 
@@ -427,6 +426,7 @@ export default function App() {
     CONNS.forEach((c) => {
       const s = cs.current[c.id]; if (!s) return;
       const on = c.show(beat), rm = reduced();
+      gsap.killTweensOf(s, 'p');
       gsap.to(s, { p: on ? 1 : 0, duration: rm ? 0 : on ? 1.1 : 0.5, delay: rm ? 0 : on ? c.delay(beat) : 0, ease: 'power2.inOut', overwrite: 'auto' });
       gsap.to(s, { op: c.op(beat), duration: rm ? 0 : 0.8, overwrite: false });
     });
