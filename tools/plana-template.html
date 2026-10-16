@@ -84,6 +84,7 @@ svg#edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 .fchip i.l{width:14px;height:3px;border-radius:2px}
 .fchip b{color:var(--mut);font-weight:600;font-size:11px}
 .fchip.off{opacity:.4;text-decoration:line-through}
+#offrow .fchip.off{text-decoration:none}
 .fchip.off b{text-decoration:none}
 #dock .tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px}
 #dock .tools .sp{flex:1}
@@ -129,7 +130,10 @@ svg#edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 #drawer .rel i{width:3px;align-self:stretch;border-radius:2px;flex:none}
 #drawer .rel div{line-height:1.3}#drawer .rel small{display:block;color:var(--mut);font-size:11px}
 #drawer .kpi{display:flex;gap:18px;margin-top:10px}#drawer .kpi div{font-size:11px;color:var(--mut)}#drawer .kpi b{display:block;font-size:18px;color:var(--txt);font-weight:650}
-#terr{position:absolute;inset:0;z-index:20;background:#000;display:none}#terr.on{display:block}#terr iframe{width:100%;height:100%;border:0}#terrClose{position:absolute;left:20px;bottom:20px;z-index:21}
+#terr{position:absolute;inset:0;z-index:20;background:#000;display:none}
+#terrLoad{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--mut);font-size:12.5px;z-index:1;transition:opacity .5s}#terrLoad b{color:var(--txt);font-size:14px}
+#terrLoad .spin{width:30px;height:30px;border-radius:50%;border:3px solid rgba(255,255,255,.12);border-top-color:var(--acc);animation:spin 1s linear infinite;margin-bottom:6px}
+#terr.ready #terrLoad{opacity:0;pointer-events:none}#terr iframe{opacity:0;transition:opacity .9s}#terr.ready iframe{opacity:1}#terr.on{display:block}#terr iframe{width:100%;height:100%;border:0}#terrClose{position:absolute;left:20px;bottom:20px;z-index:21}
 @media(min-width:861px){body.dr #drawer{bottom:18px}body.dr #dock{left:20px;transform:none;width:calc(100vw - 440px)}body.dr #offrow{left:20px;transform:none}}
 @media(max-width:860px){
  #top{flex-wrap:wrap;padding:12px}#search{width:100%;order:3}#stat{display:none}
@@ -159,7 +163,7 @@ svg#edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
  </div>
 </div>
 <div id="pop" class="glass"></div>
-<div id="terr"><iframe id="terrFrame" title="Territorio de Kennedy"></iframe><button class="btn pri" id="terrClose"><i class="fa-solid fa-diagram-project"></i> Volver a la red</button></div>
+<div id="terr"><div id="terrLoad"><div class="spin"></div><b>Preparando el territorio</b><span>Cargando la base 3D de Kennedy…</span></div><iframe id="terrFrame" title="Territorio de Kennedy"></iframe><button class="btn pri" id="terrClose"><i class="fa-solid fa-diagram-project"></i> Volver a la red</button></div>
 <script>
 /*DATA*/
 (()=>{
@@ -176,10 +180,17 @@ const shortCap=c=>c.badge.charAt(0)+c.badge.slice(1).toLowerCase(), shortTip=t=>
 const off=new Set(), hiddenCat=new Set(), hiddenT=new Set();
 const opts={size:true,thick:true,flow:true,rings:true};
 let sel=-1, selEdge=-1, hover=-1, hoverEdge=-1, hlCat=-1, hlType=-1, reveal=false, alpha=1, untangled=true, autofit=true;
-const isOn=i=>!off.has(i)&&!hiddenCat.has(nodes[i].cat);
+const orph=new Set();
+const baseOn=i=>!off.has(i)&&!hiddenCat.has(nodes[i].cat);
+const isOn=i=>baseOn(i)&&!orph.has(i);
 const edgeOn=k=>{const e=edges[k];return isOn(e.s)&&isOn(e.t)&&!hiddenT.has(e.type)};
 const deg=new Array(N).fill(0);
-function recount(){deg.fill(0);edges.forEach((e,k)=>{if(edgeOn(k)){deg[e.s]++;deg[e.t]++}})}
+// un actor sin ninguna conexión activa no puede quedar flotando: se oculta solo y queda listado para reconectarlo
+function recount(){orph.clear();deg.fill(0);let cnt=0;for(let i=0;i<N;i++)if(baseOn(i))cnt++;
+ edges.forEach(e=>{if(baseOn(e.s)&&baseOn(e.t)&&!hiddenT.has(e.type)){deg[e.s]++;deg[e.t]++}});
+ if(cnt>1)for(let i=0;i<N;i++)if(baseOn(i)&&deg[i]===0)orph.add(i)}
+function connect(i){const live=adj[i].some(k=>baseOn(other(k,i))&&!hiddenT.has(edges[k].type));if(!live)adj[i].forEach(k=>{const o=other(k,i);if(!hiddenCat.has(nodes[o].cat)&&!hiddenT.has(edges[k].type))off.delete(o)})}
+function reconnect(i){off.delete(i);adj[i].forEach(k=>{const o=other(k,i);off.delete(o);hiddenCat.delete(nodes[o].cat);hiddenT.delete(edges[k].type)})}
 const radius=i=>isOn(i)?(opts.size?Math.min(78,36+7*Math.sqrt(deg[i])):44):14;
 // ---- nodos
 const P=nodes.map((n,i)=>{const q=DATA.pos&&DATA.pos[i];return q?{x:q.x*.8,y:q.y*.8,vx:0,vy:0,r:20,tr:20}:{x:Math.cos(i*2.4)*300,y:Math.sin(i*2.4)*300,vx:0,vy:0,r:20,tr:20}});
@@ -270,7 +281,7 @@ function decorate(){const f=focus(),act=[];for(let i=0;i<N;i++)if(isOn(i))act.pu
 function ripple(i){const r=document.createElement('div');r.className='ripple';r.style.left=P[i].x+'px';r.style.top=P[i].y+'px';r.style.setProperty('--c',capas[nodes[i].cat].color);world.appendChild(r);setTimeout(()=>r.remove(),1100)}
 function toggleNode(i){if(off.has(i))off.delete(i);else off.add(i);changed()}
 function pick(i){if(i!==sel)tab='res';
- if(off.has(i))off.delete(i);
+ if(off.has(i)){off.delete(i);connect(i);recount();changed()}else if(orph.has(i)){reconnect(i);recount();changed()}
  if(reveal){let any=false;adj[i].forEach(k=>{const o=other(k,i);if(off.has(o)){off.delete(o);any=true}});if(any)changed(i)}
  else if(!isOn(i)){hiddenCat.delete(nodes[i].cat);changed()}
  sel=i;selEdge=-1;ripple(i);drawNode(i);decorate();autofit=true}
@@ -315,10 +326,14 @@ function ui(){
  $('#stat').innerHTML=`<b>${act.length}</b> actores · <b>${ne}</b> relaciones`;
  $('#chCap').innerHTML=capas.map((c,i)=>{const n=nodes.filter((x,k)=>x.cat===i&&isOn(k)).length;return `<span class="fchip ${hiddenCat.has(i)?'off':''}" data-c="${i}" title="${c.desc}"><i style="background:${c.color}"></i>${shortCap(c)}<b>${n}</b></span>`}).join('');
  $('#chTip').innerHTML=tipos.map((t,i)=>{const n=edges.filter((e,k)=>e.type===i&&edgeOn(k)).length;return `<span class="fchip ${hiddenT.has(i)?'off':''}" data-t="${i}" title="${t.name}: ${t.def}"><i class="l" style="background:${t.color}"></i>${shortTip(t)}<b>${n}</b></span>`}).join('');
- const of=$('#offrow'),offs=[...off];of.classList.toggle('on',offs.length>0);of.innerHTML=offs.length?'<span class="k">Apagados</span>'+offs.map(i=>`<span class="fchip off" data-o="${i}" title="Clic para encender" style="text-decoration:none;opacity:.85"><i style="background:${capas[nodes[i].cat].color}"></i>${nodes[i].short.slice(0,24)} <i class="fa-solid fa-plus" style="width:auto;height:auto;background:none;font-size:10px"></i></span>`).join('')+'<button class="btn" data-allon style="height:26px">Encender todos</button>':'';
+ const of=$('#offrow'),offs=[...off],orphs=[...orph];of.classList.toggle('on',offs.length>0||orphs.length>0);
+ const chip=(i,att,cls,ico,tt)=>'<span class="fchip '+cls+'" '+att+'="'+i+'" title="'+tt+'" style="opacity:.9"><i style="background:'+capas[nodes[i].cat].color+'"></i>'+nodes[i].short.slice(0,24)+' <i class="fa-solid '+ico+'" style="width:auto;height:auto;background:none;font-size:10px"></i></span>';
+ of.innerHTML=(offs.length?'<span class="k">Apagados</span>'+offs.map(i=>chip(i,'data-o','off','fa-plus','Clic para encender (y reconectarlo)')).join(''):'')+
+  (orphs.length?'<span class="k" style="margin-left:'+(offs.length?10:0)+'px">Ocultos sin conexiones</span>'+orphs.map(i=>chip(i,'data-r','off','fa-link','Se ocultó porque se quedó sin ninguna conexión. Clic para reconectarlo')).join(''):'')+
+  (offs.length?'<button class="btn" data-allon style="height:26px">Encender todos</button>':'');
  requestAnimationFrame(()=>{window.__dockH=$('#dock').offsetHeight;document.documentElement.style.setProperty('--dockh',window.__dockH+'px')})}
 $('#hubs').addEventListener('click',ev=>{const h=ev.target.closest('[data-n]');if(h)pick(+h.dataset.n)});
-$('#offrow').addEventListener('click',ev=>{const o=ev.target.closest('[data-o]');if(o){off.delete(+o.dataset.o);changed();return}if(ev.target.closest('[data-allon]')){off.clear();changed()}});
+$('#offrow').addEventListener('click',ev=>{const o=ev.target.closest('[data-o]');if(o){const i=+o.dataset.o;off.delete(i);connect(i);changed();return}const rc=ev.target.closest('[data-r]');if(rc){reconnect(+rc.dataset.r);changed();return}if(ev.target.closest('[data-allon]')){off.clear();changed()}});
 $('#dock').addEventListener('click',ev=>{const it=ev.target.closest('.fchip');if(!it)return;const isC=it.dataset.c!=null,set=isC?hiddenCat:hiddenT,k=+(isC?it.dataset.c:it.dataset.t),n=isC?capas.length:tipos.length;
  if(ev.altKey){const solo=[...Array(n).keys()].every(i=>i===k?!set.has(i):set.has(i));set.clear();if(!solo)for(let i=0;i<n;i++)if(i!==k)set.add(i)}else{set.has(k)?set.delete(k):set.add(k)}changed()});
 $('#dock').addEventListener('mouseover',ev=>{const it=ev.target.closest('.fchip');const c=it&&it.dataset.c!=null?+it.dataset.c:-1,tp=it&&it.dataset.t!=null?+it.dataset.t:-1;if(c!==hlCat||tp!==hlType){hlCat=c;hlType=tp;decorate()}});
@@ -354,8 +369,9 @@ const setMode=v=>{reveal=v;$('#bMode').classList.toggle('on',v)};
 $('#bMode').onclick=()=>{setMode(!reveal);if(reveal){const keep=sel>=0?sel:deg.indexOf(Math.max(...deg));for(let i=0;i<N;i++){if(i!==keep)off.add(i);else off.delete(i)}changed();pick(keep)}else{off.clear();changed()}};
 $('#bAll').onclick=()=>{off.clear();hiddenCat.clear();hiddenT.clear();setMode(false);closeDrawer();changed()};
 $('#bFit').onclick=()=>{autofit=true};
-$('#bMat').onclick=()=>{const ids=nodes.map((n,i)=>i).filter(isOn).map(i=>nodes[i].id);$('#terrFrame').src='red-actores.html?ids='+encodeURIComponent(ids.join(','));$('#terr').classList.add('on')};
-$('#terrClose').onclick=()=>{$('#terr').classList.remove('on');$('#terrFrame').removeAttribute('src')};
+addEventListener('message',ev=>{if(ev.data&&ev.data.type==='territorio-listo')$('#terr').classList.add('ready')});
+$('#bMat').onclick=()=>{$('#terr').classList.remove('ready');const ids=nodes.map((n,i)=>i).filter(isOn).map(i=>nodes[i].id);$('#terrFrame').src='red-actores.html?ids='+encodeURIComponent(ids.join(','));$('#terr').classList.add('on')};
+$('#terrClose').onclick=()=>{$('#terr').classList.remove('on','ready');$('#terrFrame').removeAttribute('src')};
 addEventListener('resize',()=>{window.__dockH=$('#dock').offsetHeight;document.documentElement.style.setProperty('--dockh',window.__dockH+'px')});
 // ---- arranque: red completa, sin nodo central
 recount();snapshot();ui();

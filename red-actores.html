@@ -4668,7 +4668,21 @@ window.onerror = function(msg, url, line, col, error) {
     document.body.classList.add('embed-actores');
     rawNodes.forEach(n => { n.hiddenByUser = !keep.has(n.taxaId); });
     recalculateDegreesAndSizes();
-    setTimeout(() => { const b = document.getElementById('btnPlayTransition'); if (b) b.click(); }, 700);
+    // arranca YA en la vista de territorio (sin mostrar la red 3D flotante) y se revela con un vuelo de cámara
+    particleUniforms.uMorphProgress.value = 1; currentMorph = 1; targetMorph = 1; isTerritory = true;
+    camera.fov = 13.1; camera.updateProjectionMatrix();
+    camera.position.set(territoryCamPos.x, territoryCamPos.y * 1.9, territoryCamPos.z * 1.05);
+    controls.target.copy(territoryTarget);
+    updateStageVisibility();
+    let done = false;
+    const reveal = () => {
+      if (done) return; done = true;
+      try { window.parent.postMessage({ type: 'territorio-listo' }, '*'); } catch (e) {}
+      if (window.gsap) gsap.to(camera.position, { x: territoryCamPos.x, y: territoryCamPos.y, z: territoryCamPos.z, duration: 2.6, ease: 'power2.out' });
+      else camera.position.copy(territoryCamPos);
+    };
+    const poll = setInterval(() => { const B = window.Base3D; if (B && B.state.status === 'ready') { clearInterval(poll); setTimeout(reveal, 400); } }, 250);
+    setTimeout(() => { clearInterval(poll); reveal(); }, 30000);
   })();
 
   // Resize Handler
