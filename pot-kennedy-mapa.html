@@ -220,11 +220,11 @@ footer button:hover{background:#171717}
 .nn.d2 .nc{background:#0a0a0a;color:var(--c);border:3px solid var(--c)}
 .nc:hover{transform:scale(1.08);box-shadow:0 0 22px -2px var(--c)}
 .nn.sel .nc{box-shadow:0 0 0 4px #fff,0 0 26px 2px var(--c)}
-.nl{position:absolute;width:150px;left:-75px;text-align:center;font:500 11.5px/1.2 var(--sans);color:#e8e8e8;text-shadow:0 1px 3px #000,0 0 8px #000;pointer-events:none;transition:opacity .35s,transform .5s;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.nl{transform:scale(var(--ils,1));transform-origin:50% 0;position:absolute;width:150px;left:-75px;text-align:center;font:500 11.5px/1.2 var(--sans);color:#e8e8e8;text-shadow:0 1px 3px #000,0 0 8px #000;pointer-events:none;transition:opacity .35s,transform .5s;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .nn.d0 .nl{width:190px;left:-95px;font:700 14px/1.2 var(--sans)}.nn.d1 .nl{width:170px;left:-85px;font-weight:700;font-size:12.5px}
 .nk{position:absolute;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#000;border:1px solid var(--c);color:#fff;font:500 10px var(--mono);display:grid;place-items:center;pointer-events:none;transition:opacity .35s,transform .5s}
 .nn.open .nk{display:none}
-.nn.off{pointer-events:none}.nn.off .nc,.nn.off .nl,.nn.off .nk{opacity:0;transform:scale(.2)}
+.nn.off{pointer-events:none}.nn.off .nc,.nn.off .nk{opacity:0;transform:scale(.2)}.nn.off .nl{opacity:0}
 #nhint{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);z-index:3;pointer-events:none;display:flex;align-items:center;gap:10px;font:500 11px var(--mono);letter-spacing:1.5px;text-transform:uppercase;padding:11px 16px;border:1px solid var(--line2);border-radius:30px;background:#050505;white-space:nowrap;max-width:92vw;transition:opacity .4s}
 #nhint.hide{opacity:0}
 #ninfo{position:absolute;left:50%;bottom:16px;transform:translate(-50%,14px);z-index:3;width:min(540px,calc(100vw - 24px));max-height:34vh;overflow:auto;padding:14px 16px;background:#080808;border:1px solid var(--line2);border-left:4px solid var(--c,#fff);border-radius:14px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;user-select:text;cursor:default}
@@ -670,7 +670,7 @@ $('#bPlay').onclick = () => {
   // Cada clic muestra solo lo que contiene la bola tocada y la retira junto con su nivel (Atrás deshace): blanco (centro) → colores (ramas) → borde de color (variables)
   const nv = document.getElementById('net'), nw = document.getElementById('nworld'), nsvg = document.getElementById('nsvg'), ninfo = document.getElementById('ninfo'), nhint = document.getElementById('nhint');
   const net = {exp: new Set(), vis: [], T: {x: 0, y: 0, k: 1}, tg: {x: 0, y: 0, k: 1}, auto: true, moving: false, alpha: 0, raf: 0, sel: null, built: false, links: []};
-  const NR = n => n.d === 0 ? 64 : n.d === 1 ? 42 : 25;
+  const NR = n => n.d === 0 ? 64 : n.d === 1 ? 42 : 25, SP = () => innerWidth < 700 ? .6 : 1; // en celular la red se compacta para que se alcance a leer
   function netBuild() {
     net.built = true;
     all.forEach(n => {
@@ -705,7 +705,7 @@ $('#bPlay').onclick = () => {
       arr.forEach((k, i) => {
         if (p) {
           const out = Math.hypot(p.nx - cx, p.ny - cy) > 1 ? Math.atan2(p.ny - cy, p.nx - cx) : -Math.PI / 2, arc = net.vis.length <= 1 ? Math.PI * 2 : Math.PI * 1.7;
-          const ang = arc >= Math.PI * 2 ? out + i * Math.PI * 2 / arr.length : out - arc / 2 + (i + .5) * arc / arr.length, dist = NR(p) + NR(k) + 170;
+          const ang = arc >= Math.PI * 2 ? out + i * Math.PI * 2 / arr.length : out - arc / 2 + (i + .5) * arc / arr.length, dist = NR(p) + NR(k) + 170 * SP();
           k.nx = p.nx + Math.cos(ang) * dist; k.ny = p.ny + Math.sin(ang) * dist;
         } else if (!net.vis.length && k.d === 0) { k.nx = 0; k.ny = 0 }
         else { const a = Math.random() * 6.283, r = 60 + Math.random() * 120; k.nx = cx + Math.cos(a) * r; k.ny = cy + Math.sin(a) * r }
@@ -727,13 +727,13 @@ $('#bPlay').onclick = () => {
   function netTick() {
     const V = net.vis, a = net.alpha; if (a <= .02) return;
     for (let i = 0; i < V.length; i++) for (let j = i + 1; j < V.length; j++) {
-      const p = V[i], q = V[j]; let dx = q.nx - p.nx, dy = q.ny - p.ny; const d = Math.hypot(dx, dy) || .01, min = NR(p) + NR(q) + 110; dx /= d; dy /= d;
-      const f = 90000 / (d * d) * a + (d < min ? (min - d) * .2 : 0);
+      const p = V[i], q = V[j]; let dx = q.nx - p.nx, dy = q.ny - p.ny; const d = Math.hypot(dx, dy) || .01, min = NR(p) + NR(q) + 110 * SP(); dx /= d; dy /= d;
+      const f = 90000 * SP() * SP() / (d * d) * a + (d < min ? (min - d) * .2 : 0);
       p.nvx -= dx * f; p.nvy -= dy * f; q.nvx += dx * f; q.nvy += dy * f;
     }
     net.links.forEach(l => {
       if (!l.a.nv || !l.b.nv) return;
-      let dx = l.b.nx - l.a.nx, dy = l.b.ny - l.a.ny; const d = Math.hypot(dx, dy) || .01, L = NR(l.a) + NR(l.b) + (l.x ? 360 : 190), f = (d - L) * (l.x ? .006 : .022); dx /= d; dy /= d;
+      let dx = l.b.nx - l.a.nx, dy = l.b.ny - l.a.ny; const d = Math.hypot(dx, dy) || .01, L = NR(l.a) + NR(l.b) + (l.x ? 360 : 190) * SP(), f = (d - L) * (l.x ? .006 : .022); dx /= d; dy /= d;
       l.a.nvx += dx * f; l.a.nvy += dy * f; l.b.nvx -= dx * f; l.b.nvy -= dy * f;
     });
     V.forEach(n => { n.nvx -= n.nx * .002; n.nvy -= n.ny * .002; n.nvx *= .8; n.nvy *= .8; n.nx += n.nvx; n.ny += n.nvy; netPlace(n) });
@@ -747,7 +747,7 @@ $('#bPlay').onclick = () => {
     const k = Math.min(1.25, Math.max(.18, Math.min((vw - 24) / w, (vh - tp - bt) / h)));
     net.tg = {k, x: (vw - w * k) / 2 - x0 * k, y: tp + (vh - tp - bt - h * k) / 2 - y0 * k};
   }
-  function netApply() { nw.style.transform = 'translate(' + net.T.x + 'px,' + net.T.y + 'px) scale(' + net.T.k + ')' }
+  function netApply() { nw.style.setProperty('--ils', Math.min(2.4, Math.max(1, .8 / net.T.k)).toFixed(2)); nw.style.transform = 'translate(' + net.T.x + 'px,' + net.T.y + 'px) scale(' + net.T.k + ')' }
   function netLoop() {
     if (net.raf) return;
     const step = () => {
