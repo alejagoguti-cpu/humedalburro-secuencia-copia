@@ -697,7 +697,8 @@ $('#bPlay').onclick = () => {
   function netUpdate() {
     const last = [...net.exp].pop(), desc = n => (n.k || []).reduce((a, k) => a.concat([k], desc(k)), []);
     const now = !last ? [ROOT] : last === ROOT ? ROOT.k.slice() : desc(last), set = new Set(now); // centro → ramas → toda la red de la rama tocada
-    const ghosts = new Set();
+    const ghosts = new Set(); // solo celular: las bolas de borde se conectan con las de otros colores (extremo del enlace ⇄, atenuado)
+    if (SP() < 1 && last && last !== ROOT) net.links.forEach(l => { if (!l.x) return; const A = set.has(l.a), B = set.has(l.b); if (A && !B) ghosts.add(l.b); else if (B && !A) ghosts.add(l.a) });
     let cx = 0, cy = 0; net.vis.forEach(n => { cx += n.nx; cy += n.ny }); if (net.vis.length) { cx /= net.vis.length; cy /= net.vis.length }
     const groups = new Map();
     now.filter(n => !n.nv).forEach(n => { const p = n.par && n.par.nv ? n.par : null; if (!groups.has(p)) groups.set(p, []); groups.get(p).push(n) });
@@ -767,7 +768,8 @@ $('#bPlay').onclick = () => {
   }
   function netClick(n) {
     net.sel = n; netInfo(n);
-    if (n === ROOT) { net.exp.clear(); net.exp.add(ROOT) }
+    if (n.ng) { let b = n; while (b.d > 1) b = b.par; net.exp.clear(); net.exp.add(ROOT); if (b.d === 1) net.exp.add(b) } // bola atenuada: lleva a su rama
+    else if (n === ROOT) { net.exp.clear(); net.exp.add(ROOT) }
     else if (n.d === 1) { net.exp.clear(); net.exp.add(ROOT); net.exp.add(n) } // bola de color: se esconden todas y sale la red de su rama
     netUpdate();
   }
@@ -798,6 +800,7 @@ $('#bPlay').onclick = () => {
 
   // ---- arranque: el fenómeno central aparece y sus variables salen de él
   applyPal(0); enterIntro();
+  if (innerWidth < 700) netOpen(); // celular: se abre directo en la red
 })();
 </script>
 </body>
