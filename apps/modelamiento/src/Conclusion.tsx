@@ -21,6 +21,41 @@ const T = (x: number, y: number, o = 1, s = 1, d = 0): St => ({ x, y, o, s, d })
 const PIN = (o = 1, s = 1, d = 0): St => ({ x: NaN, y: NaN, o, s, d });
 
 const PIDX: Record<string, number> = { p1: 0, p2: 1, p3: 2, p4: 3 };
+
+// ------------------------------------------------------------------ sin superposición de textos
+// Orden de prioridad: los titulares y nodos se quedan donde el diseño los pone; leyendas y notas buscan el hueco libre más cercano.
+const PRIO: string[] = [
+  'w1', 'w2', 'sub1', 'hint', 'hFrag', 'hQ', 'hCap', 'hRec', 'subRec', 'hubR', 'subR', 'fin', 'finSub', 'cta',
+  ...PRESS.map((p) => p.id), ...CAPS.map((c) => c.id), ...INTERD.map((c) => c.id), ...SYSTEMS.map((s) => s.id),
+  ...Array.from({ length: 13 }, (_, i) => 'c' + i), 'leg3', 'legS', 'noteL', 'cap',
+];
+interface Box { x0: number; y0: number; x1: number; y1: number }
+const clash = (a: Box, b: Box, pad: number) => a.x0 < b.x1 + pad && a.x1 + pad > b.x0 && a.y0 < b.y1 + pad && a.y1 + pad > b.y0;
+function resolveLayout(L: Record<string, St>, els: Record<string, HTMLElement | null>, W: number, H: number): Record<string, { x: number; y: number }> {
+  const out: Record<string, { x: number; y: number }> = {};
+  // zonas reservadas: encabezado y barra de navegación
+  const placed: Box[] = [{ x0: 0, y0: H - 62, x1: W, y1: H }];
+  const offsets: [number, number][] = [];
+  for (let dy = -260; dy <= 260; dy += 12) for (let dx = -200; dx <= 200; dx += 20) offsets.push([dx, dy]);
+  offsets.sort((a, b) => Math.hypot(a[0], a[1] * 1.4) - Math.hypot(b[0], b[1] * 1.4));
+  for (const id of PRIO) {
+    const s = L[id], el = els[id];
+    if (!s || !el || s.o < 0.3 || !Number.isFinite(s.x)) continue;
+    const w = el.offsetWidth * s.s, h = el.offsetHeight * s.s;
+    const cx = s.x * W, cy = s.y * H;
+    let best = { x: cx, y: cy };
+    for (const [dx, dy] of offsets) {
+      const x = cx + dx, y = cy + dy;
+      const bx: Box = { x0: x - w / 2, y0: y - h / 2, x1: x + w / 2, y1: y + h / 2 };
+      if (bx.x0 < 8 || bx.x1 > W - 8 || bx.y0 < 8 || bx.y1 > H - 62) continue;
+      if (placed.some((p) => clash(bx, p, 6))) continue;
+      best = { x, y }; break;
+    }
+    out[id] = best;
+    placed.push({ x0: best.x - w / 2, y0: best.y - h / 2, x1: best.x + w / 2, y1: best.y + h / 2 });
+  }
+  return out;
+}
 function layout(b: number, m: boolean): Record<string, St> {
   const L: Record<string, St> = {};
   const hide = (x = 0.5, y = 0.5) => T(x, y, 0, 0.96);
@@ -241,13 +276,15 @@ export default function Conclusion() {
   }, []);
 
   // ---------- posiciones de los elementos
-  const applyLayout = (b: number, instant = false) => {
+  const applyLayout = (b: number, instant = false, soft = false) => {
     const { W, H } = stageSize(), rm = reduced() || instant;
-    Object.entries(layout(b, mRef.current)).forEach(([id, s]) => {
+    const L = layout(b, mRef.current);
+    const adj = resolveLayout(L, els.current, W, H);
+    Object.entries(L).forEach(([id, s]) => {
       const el = els.current[id]; if (!el) return;
-      const pos = Number.isFinite(s.x) ? { x: s.x * W, y: s.y * H } : {};
-      gsap.killTweensOf(el, 'x,y,opacity,scale');
-      gsap.to(el, { ...pos, opacity: s.o, scale: s.s, duration: rm ? 0 : 1.1, delay: rm ? 0 : s.d, ease: 'power3.inOut', overwrite: 'auto', pointerEvents: s.o > 0.5 ? 'auto' : 'none' });
+      const a = adj[id];
+      const pos = Number.isFinite(s.x) ? { x: a ? a.x : s.x * W, y: a ? a.y : s.y * H } : {};
+      gsap.to(el, { ...pos, opacity: s.o, scale: s.s, duration: rm ? 0 : soft ? 0.5 : 1.1, delay: rm || soft ? 0 : s.d, ease: 'power3.inOut', overwrite: true, pointerEvents: s.o > 0.5 ? 'auto' : 'none' });
     });
   };
 
@@ -517,6 +554,8 @@ export default function Conclusion() {
     });
   }, [beat]);
 
+  useEffect(() => { applyLayout(beatRef.current, false, true); }, [selP]);
+
   // ---------- trazado: anclado a elementos y a coordenadas reales
   useEffect(() => {
     const stage = stageRef.current!;
@@ -537,7 +576,36 @@ export default function Conclusion() {
       if (ref.startsWith('fx:')) { const f = FX[+ref.slice(3)]; const s = stage.getBoundingClientRect(); return { x: s.left + f[0] * s.width, y: s.top + f[1] * s.height }; }
       return null;
     };
+    // etiquetas del mapa: cada una busca un hueco que no pise a otra etiqueta ni a ninguna tarjeta o nota
+    const declutterMarkers = () => {
+      const a = api.current; if (!a) return;
+      const occ: DOMRect[] = [];
+      PRIO.concat(['pinC', 'hubW']).forEach((id) => {
+        const el = els.current[id]; if (!el) return;
+        if (parseFloat(el.style.opacity || '0') < 0.3) return;
+        occ.push(el.getBoundingClientRect());
+      });
+      const hit = (r: DOMRect, o: DOMRect, pad: number) => r.left < o.right + pad && r.right + pad > o.left && r.top < o.bottom + pad && r.bottom + pad > o.top;
+      const cands: [number, number][] = [[0, 0], [0, -22], [0, 22], [0, -44], [0, 44], [30, -30], [30, 30], [-6, -66], [-6, 66]];
+      Object.values(a.markers).forEach((mk) => {
+        const sp = mk.querySelector('span') as (HTMLElement & { _o?: [number, number] }) | null;
+        if (!sp || !mk.classList.contains('on')) return;
+        const off = sp._o ?? [0, 0];
+        const r = sp.getBoundingClientRect();
+        const nat = { l: r.left - off[0], t: r.top - off[1], w: r.width, h: r.height };
+        let pick = cands[0];
+        for (const c of cands) {
+          const box = new DOMRect(nat.l + c[0], nat.t + c[1], nat.w, nat.h);
+          if (box.left < 6 || box.right > window.innerWidth - 6 || box.top < 8 || box.bottom > window.innerHeight - 64) continue;
+          if (occ.some((o) => hit(box, o, 4))) continue;
+          pick = c; break;
+        }
+        occ.push(new DOMRect(nat.l + pick[0], nat.t + pick[1], nat.w, nat.h));
+        if (pick[0] !== off[0] || pick[1] !== off[1]) { sp._o = [pick[0], pick[1]]; sp.style.transform = 'translate(' + pick[0] + 'px,' + pick[1] + 'px)'; sp.style.transition = 'transform .4s'; }
+      });
+    };
     const tick = () => {
+      declutterMarkers();
       const sr = stage.getBoundingClientRect();
       // pines anclados al mapa
       const pinC = els.current.pinC, hubW = els.current.hubW;
