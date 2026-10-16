@@ -1,7 +1,7 @@
 // Convierte el libro "red-actores-humanos-no-humanos-kennedy-v2.xlsx" al formato del visor
 // (CAPAS, INTERACCIONES, NODOS, ARISTAS, RED) -> datos/red-actores-kennedy.xlsx
 // Uso: node tools/make-red-actores.js <libro-origen.xlsx>
-const ExcelJS = require('exceljs'); const path = require('path');
+const ExcelJS = require('exceljs'); const X = require('./red-actores-extra.js'); const path = require('path');
 const v = c => { let x = c.value; if (x && typeof x === 'object') x = 'result' in x ? x.result : (x.richText ? x.richText.map(t => t.text).join('') : x.text); return x == null ? '' : String(x).trim(); };
 const CAPAS = [
   ['C1', 'Actores institucionales', 'Entidades distritales y nacionales que regulan, planean y operan', '#3B9EFF', 'fa-landmark', 'INSTITUCIONAL'],
@@ -33,6 +33,7 @@ const PESO = { 'Crítica': 3, 'Severa': 3, 'Alta': 2, 'Media': 1, 'Baja': 1 };
       'Vulnerabilidad territorial: ' + g(19) + ' · Poder de decisión: ' + g(15),
       'Coordinación: ' + g(17) + ' · Acción: ' + g(18), 'Control de información: ' + g(16), g(13), '', g(7), g(8), '', '', '', '']);
   }
+  X.NODES.forEach(x => nodes.push([x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], X.FUENTE_X, '', x[10], x[11], '', '', '', '']));
   add('NODOS', ['ID', 'Nombre', 'Capa', 'Categoria', 'Escala', 'Ubicacion', 'Rol', 'Alerta', 'Actores', 'Hipotesis', 'Fuente', 'Imagen', 'Latitud', 'Longitud', 'Imagen 1', 'Imagen 2', '', 'Icono'], nodes);
   const edges = [];
   for (let r = 5; r <= a.rowCount; r++) {
@@ -40,6 +41,7 @@ const PESO = { 'Crítica': 3, 'Severa': 3, 'Alta': 2, 'Media': 1, 'Baja': 1 };
     const s = byName.get(g(2)), t = byName.get(g(3)); if (!s || !t) throw new Error('Arista sin nodo: ' + id);
     edges.push([id, s, t, tipoDe(g(4))[1], g(4) + ' (' + g(5) + ', ' + g(6) + ' m)', g(7), g(9), PESO[g(9)] || 1, '', g(8), '', g(10)]);
   }
+  X.EDGES.forEach(e => edges.push([e[0], e[1], e[2], e[3], e[4], e[5], e[6], PESO[e[6]] || 1, '', e[7], '', e[8]]));
   add('ARISTAS', ['ID', 'Origen', 'Destino', 'Tipo', 'Detalle', 'Justificacion', 'Tension', 'Peso', 'Declarada', 'Operativa', 'Hipotesis', 'Evidencia'], edges);
   add('RED', ['Clave', 'Valor'], [
     ['titulo', 'Red de actores humanos y no humanos de Kennedy — Corte II'], ['marca', 'ACTORES H Y NO H · KENNEDY'],
